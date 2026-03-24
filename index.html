@@ -338,9 +338,24 @@ let t=text.value;
 let out=[];
 let buf=[];
 
-for(let ch of t){
+for(let i=0;i<t.length;i++){
 
+let ch=t[i];
+
+// ①〜⑳は完全削除
 if(/[①-⑳]/.test(ch)) continue;
+
+// 濁点結合
+if(t[i+1]==="゛"){
+ch = ch + "゛";
+i++;
+}
+
+// 半濁点結合
+if(t[i+1]==="゜"){
+ch = ch + "゜";
+i++;
+}
 
 let c=rev[ch];
 
@@ -351,14 +366,18 @@ c="50";
 
 buf.push(c);
 
-if(buf.length==5){
-out.push(...buf,"50");
+// ★ここ重要：5文字ごとに確定
+if(buf.length===5){
+out.push(...buf);
 buf=[];
 }
 }
 
+// ★最後だけ1回埋める（ここ超重要）
+if(buf.length>0){
 while(buf.length<5)buf.push("50");
-out.push(...buf,"50");
+out.push(...buf);
+}
 
 hexOut.textContent=out.join(" ");
 }
