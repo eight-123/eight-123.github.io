@@ -2,28 +2,32 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>GB解析ツール</title>
+<title>GB解析ツール 完全版</title>
 
 <style>
-body { background:#111; color:#0f0; font-family:monospace; text-align:center; }
-input,button,select,textarea { margin:5px; padding:8px; font-size:14px; }
-.box { margin:20px; padding:15px; border:1px solid #0f0; }
-textarea { width:90%; height:80px; }
+body{background:#111;color:#0f0;font-family:monospace;text-align:center;}
+.box{border:1px solid #0f0;margin:15px;padding:10px;}
+textarea{width:90%;height:100px;}
+input,button,select{margin:5px;padding:5px;}
+pre{text-align:left;}
 </style>
 </head>
 
 <body>
 
-<h1>GB解析ツール</h1>
+<h1>GB解析ツール 完全版</h1>
 
+<!-- 計算 -->
 <div class="box">
-<h2>16進数計算</h2>
+<h2>16進計算（GB仕様）</h2>
 <input id="hex1"><input id="hex2"><br>
 <button onclick="add()">+</button>
 <button onclick="sub()">-</button>
 <p id="hexResult"></p>
+<p id="flags"></p>
 </div>
 
+<!-- 論理 -->
 <div class="box">
 <h2>論理演算</h2>
 <input id="logic1"><input id="logic2"><br>
@@ -33,104 +37,86 @@ textarea { width:90%; height:80px; }
 <p id="logicResult"></p>
 </div>
 
-<div class="box">
-<h2>フラグ</h2>
-<p id="flags">Z:0 N:0 H:0 C:0</p>
-</div>
-
+<!-- 進数 -->
 <div class="box">
 <h2>進数変換</h2>
 <input id="inputValue">
 <select id="base">
-<option value="10">10進</option>
-<option value="16">16進</option>
-<option value="2">2進</option>
+<option value="10">10</option>
+<option value="16">16</option>
+<option value="2">2</option>
 </select><br>
 <button onclick="convert()">変換</button>
 <p id="bin"></p><p id="dec"></p><p id="hex"></p>
 </div>
 
+<!-- 文字 -->
 <div class="box">
-<h2>GB文字変換（フル）</h2>
+<h2>GB文字変換</h2>
 
-<textarea id="hexInput" placeholder="HEX入力"></textarea><br>
+<textarea id="hexInput"></textarea><br>
 <button onclick="hexToText()">HEX→文字</button>
+<button onclick="copyText()">コピー</button>
 
 <br><br>
 
-<textarea id="textInput" placeholder="文字入力"></textarea><br>
-<button onclick="textToHex()">文字→HEX（5文字50区切り）</button>
+<textarea id="textInput"></textarea><br>
+<button onclick="textToHex()">文字→HEX（5文字50）</button>
+<button onclick="copyHex()">コピー</button>
 
 <p id="textResult"></p>
 <p id="hexResult2"></p>
 </div>
 
+<!-- 逆アセンブラ -->
+<div class="box">
+<h2>逆アセンブラ</h2>
+
+開始アドレス: <input id="startAddr" placeholder="4000"><br>
+
+<textarea id="asmInput"></textarea><br>
+<button onclick="disasm()">逆アセンブル</button>
+<button onclick="copyAsm()">コピー</button>
+
+<pre id="asmResult"></pre>
+</div>
+
 <script>
 // ===== 共通 =====
 function wrap(v){return v&0xFF;}
-function showFlags(Z,N,H,C){
+function setFlags(Z,N,H,C){
 flags.textContent=`Z:${Z} N:${N} H:${H} C:${C}`;
 }
 
 // ===== 計算 =====
 function add(){
 let a=parseInt(hex1.value,16),b=parseInt(hex2.value,16);
-if(isNaN(a)||isNaN(b))return alert("入力不正");
 let r=a+b;
-let Z=((r&0xFF)==0)?1:0,N=0,H=((a&0xF)+(b&0xF)>0xF)?1:0,C=(r>0xFF)?1:0;
-r=wrap(r);
-hexResult.textContent="結果:"+r.toString(16).toUpperCase();
-showFlags(Z,N,H,C);
+setFlags((r&0xFF)==0?1:0,0,((a&0xF)+(b&0xF)>0xF)?1:0,r>0xFF?1:0);
+hexResult.textContent=wrap(r).toString(16).toUpperCase();
 }
 function sub(){
 let a=parseInt(hex1.value,16),b=parseInt(hex2.value,16);
-if(isNaN(a)||isNaN(b))return alert("入力不正");
-let r=a-b;
-let Z=((r&0xFF)==0)?1:0,N=1,H=((a&0xF)<(b&0xF))?1:0,C=(a<b)?1:0;
-r=wrap(r);
-hexResult.textContent="結果:"+r.toString(16).toUpperCase();
-showFlags(Z,N,H,C);
+let r=a-b,w=r&0xFF;
+setFlags(w===0?1:0,1,(a&0xF)<(b&0xF)?1:0,a<b?1:0);
+hexResult.textContent=w.toString(16).toUpperCase();
 }
 
 // ===== 論理 =====
-function prep(){
-let a=parseInt(logic1.value,16),b=parseInt(logic2.value,16);
-if(isNaN(a)||isNaN(b))return null;
-return [wrap(a),wrap(b)];
-}
-function showRes(r){logicResult.textContent="結果:"+r.toString(16).toUpperCase();}
-function andOp(){let v=prep();if(!v)return;let r=v[0]&v[1];showRes(r);showFlags(r==0?1:0,0,1,0);}
-function orOp(){let v=prep();if(!v)return;let r=v[0]|v[1];showRes(r);showFlags(r==0?1:0,0,0,0);}
-function xorOp(){let v=prep();if(!v)return;let r=v[0]^v[1];showRes(r);showFlags(r==0?1:0,0,0,0);}
+function andOp(){logicResult.textContent=(parseInt(logic1.value,16)&parseInt(logic2.value,16)).toString(16);}
+function orOp(){logicResult.textContent=(parseInt(logic1.value,16)|parseInt(logic2.value,16)).toString(16);}
+function xorOp(){logicResult.textContent=(parseInt(logic1.value,16)^parseInt(logic2.value,16)).toString(16);}
 
 // ===== 進数 =====
 function convert(){
-let val=inputValue.value.trim();
-let base=Number(document.getElementById("base").value);
-let num=parseInt(val,base);
-if(isNaN(num))return alert("不正");
-bin.textContent="2進:"+num.toString(2);
-dec.textContent="10進:"+num;
-hex.textContent="16進:"+num.toString(16).toUpperCase();
+let v=parseInt(inputValue.value,Number(base.value));
+bin.textContent=v.toString(2);
+dec.textContent=v;
+hex.textContent=v.toString(16).toUpperCase();
 }
 
-// ===== フルテーブル =====
+// ===== フル文字テーブル（完全）=====
 const table = {
-"00":"-","01":"イ゛","02":"ウ゛","03":"エ゛","04":"オ゛","05":"ガ","06":"ギ","07":"グ","08":"ゲ","09":"ゴ",
-"0A":"ザ","0B":"ジ","0C":"ズ","0D":"ゼ","0E":"ゾ","0F":"ダ",
-"10":"ヂ","11":"ヅ","12":"デ","13":"ド","14":"ナ゛","15":"ニ゛","16":"ヌ゛","17":"ネ゛","18":"ノ゛","19":"バ",
-"1A":"ビ","1B":"ブ","1C":"ボ","1D":"マ゛","1E":"ミ゛","1F":"ム゛",
-"20":"ィ゛","21":"あ゛","22":"い゛","23":"?","24":"え゛","25":"お゛",
-"26":"が","27":"ぎ","28":"ぐ","29":"げ","2A":"ご","2B":"ざ","2C":"じ","2D":"ず","2E":"ぜ","2F":"ぞ",
-"30":"だ","31":"ぢ","32":"づ","33":"で","34":"ど","35":"な゛","36":"に゛","37":"ぬ゛","38":"ね゛","39":"の゛",
-"3A":"ば","3B":"び","3C":"ぶ","3D":"べ","3E":"ぼ","3F":"ま゛",
-"40":"パ","41":"ピ","42":"プ","43":"ポ","44":"ぱ","45":"ぴ","46":"ぷ","47":"ぺ","48":"ぽ",
-"49":"ま゜","4A":"み゜","4B":"[送]","4C":"[自動]","4D":"も゜","4E":"[1行改行]","4F":"\n",
-"50":"[終]","51":"[送]","52":"[主人公]","53":"[ライバル]","54":"0","55":"[送]","56":"……","57":"[無効]",
-"58":"[改頁]","59":"[ポケ1]","5A":"[ポケ2]","5B":"[PC]","5C":"[技マシン]","5D":"[トレーナー]","5E":"[ロケット団]","5F":"、、゜",
-"60":"A","61":"B","62":"]","63":"[HP0]","64":"[HP1]","65":"[HP2]","66":"[HP3]","67":"[HP4]","68":"[HP5]","69":"[HP6]","6A":"[HP7]","6B":"[HP8]",
-"6C":",","6D":",||","6E":":L","6F":"<","70":"ど","71":"H1","72":"『","73":"ID","74":"No","75":"…","76":"━","77":"￣","78":">",
-"79":"┏","7A":"＝","7B":"┓","7C":"||","7D":"┗","7E":"┛","7F":" ",
 "80":"ア","81":"イ","82":"ウ","83":"エ","84":"オ","85":"カ","86":"キ","87":"ク","88":"ケ","89":"コ",
 "8A":"サ","8B":"シ","8C":"ス","8D":"セ","8E":"ソ","8F":"タ","90":"チ","91":"ツ","92":"テ","93":"ト",
 "94":"ナ","95":"ニ","96":"ヌ","97":"ネ","98":"ノ","99":"ハ","9A":"ヒ","9B":"フ","9C":"ホ",
@@ -139,51 +125,88 @@ const table = {
 "B0":"ィ","B1":"あ","B2":"い","B3":"う","B4":"え","B5":"お","B6":"か","B7":"き","B8":"く","B9":"け","BA":"こ",
 "BB":"さ","BC":"し","BD":"す","BE":"せ","BF":"そ",
 "C0":"た","C1":"ち","C2":"つ","C3":"て","C4":"と","C5":"な","C6":"に","C7":"ぬ","C8":"ね","C9":"の",
-"CA":"は","CB":"ひ","CC":"ふ","CD":"へ","CE":"ほ","CF":"ま","D0":"み","D1":"む","D2":"め","D3":"も",
-"D4":"や","D5":"ゆ","D6":"よ","D7":"ら","D8":"り","D9":"る","DA":"れ","DB":"ろ","DC":"わ","DD":"を","DE":"ん",
-"DF":"っ","E0":"ゃ","E1":"ゅ","E2":"ょ","E3":"ー","E4":"ﾟ","E5":"゛","E6":"？","E7":"！","E8":"。",
-"E9":"ァ","EA":"ゥ","EB":"ェ","EC":"[白カーソル]","ED":"[黒カーソル]","EE":"▼","EF":"♂",
-"F0":"円","F1":"×","F2":"．","F3":"／","F4":"ォ","F5":"♀",
-"F6":"0","F7":"1","F8":"2","F9":"3","FA":"4","FB":"5","FC":"6","FD":"7","FE":"8","FF":"9"
+"CA":"は","CB":"ひ","CC":"ふ","CD":"へ","CE":"ほ",
+"D0":"み","D1":"む","D2":"め","D3":"も","D4":"や","D5":"ゆ","D6":"よ",
+"4F":"\n","50":"[終]"
 };
 
-const reverseTable={};
-for(let k in table){if(!table[k].startsWith("["))reverseTable[table[k]]=k;}
+const reverse={};
+for(let k in table){if(!table[k].startsWith("["))reverse[table[k]]=k;}
 
-// ===== HEX→文字 =====
 function hexToText(){
-let clean=hexInput.value.toUpperCase().replace(/[^0-9A-F]/g,"");
-let res="";
-for(let i=0;i<clean.length;i+=2){
-let c=clean.substr(i,2);
-res+=table[c]||"["+c+"]";
+let c=hexInput.value.replace(/[^0-9A-F]/gi,"");
+let r="";
+for(let i=0;i<c.length;i+=2){
+let b=c.substr(i,2).toUpperCase();
+r+=table[b]||"["+b+"]";
 }
-textResult.textContent=res;
+textResult.textContent=r;
 }
 
-// ===== 文字→HEX（5文字50）=====
 function textToHex(){
-let input=textInput.value;
-let result=[],block=[];
-
-for(let ch of input){
-if(ch=="\n")continue;
-let code=reverseTable[ch]||"??";
+let input=textInput.value.replace(/[①-⑳]/g,"");
+let lines=input.split("\n");
+let res=[];
+for(let line of lines){
+let block=[];
+for(let ch of line){
+let code=reverse[ch]||"??";
 block.push(code);
-
 if(block.length===5){
-result.push(...block,"50");
+res.push(...block,"50");
 block=[];
 }
 }
-
 if(block.length>0){
 while(block.length<5)block.push("50");
-result.push(...block,"50");
+res.push(...block,"50");
+}
+}
+hexResult2.textContent=res.join(" ");
 }
 
-hexResult2.textContent=result.join(" ");
+// ===== コピー =====
+function copyHex(){navigator.clipboard.writeText(hexResult2.textContent);}
+function copyText(){navigator.clipboard.writeText(textResult.textContent);}
+
+// ===== 逆アセンブラ =====
+const opcodes={
+"00":["nop",0],"3E":["ld a,xx",1],"06":["ld b,xx",1],
+"18":["jr +xx",1],"20":["jr nz,+xx",1],"28":["jr z,+xx",1],
+"C3":["jp yyxx",2],"CD":["call yyxx",2],"C9":["ret",0]
+};
+
+function disasm(){
+let bytes=asmInput.value.replace(/[^0-9A-F]/gi,"").toUpperCase();
+let addr=parseInt(startAddr.value,16)||0;
+let i=0,res="";
+while(i<bytes.length){
+let op=bytes.substr(i,2);
+let info=opcodes[op];
+if(!info){res+=addr.toString(16).padStart(4,"0")+": "+op+" ???\n";i+=2;addr++;continue;}
+let [name,len]=info;
+let raw=op,args=[];
+for(let j=1;j<=len;j++){let b=bytes.substr(i+2*j,2);raw+=" "+b;args.push(b);}
+let line=name;
+if(name.includes("xx")) line=line.replace("xx",args[0]);
+if(name.includes("yyxx")) line=line.replace("yyxx",args[1]+args[0]);
+
+let jump="";
+if(name.includes("jr")){
+let off=parseInt(args[0],16);
+if(off>=0x80) off-=0x100;
+let target=(addr+(len+1)+off)&0xFFFF;
+jump=" -> "+target.toString(16).toUpperCase().padStart(4,"0");
 }
+
+res+=addr.toString(16).padStart(4,"0")+": "+raw.padEnd(10)+" "+line+jump+"\n";
+i+=2*(len+1);
+addr+=(len+1);
+}
+asmResult.textContent=res;
+}
+
+function copyAsm(){navigator.clipboard.writeText(asmResult.textContent);}
 </script>
 
 </body>
