@@ -387,60 +387,98 @@ hexOut.textContent=out.join(" ");
 //////////////////////////////////////////////////////
 // 逆アセンブル（簡易）
 //////////////////////////////////////////////////////
+function normalizeHex(hex){
+hex = hex.replace(/[^0-9A-F]/gi,"").toUpperCase();
+let out="";
+for(let i=0;i<hex.length;i+=2){
+out += hex.substr(i,2);
+}
+return out;
+}
+
 function disasm(){
 
 let hex = normalizeHex(asm.value);
-let addr = parseInt(start.value,16)||0;
+let baseAddr = parseInt(start.value,16)||0;
 
 let i = 0;
+let addr = baseAddr;
+
 let out = "";
+
+// ジャンプ先ラベル管理
+let labels = {};
+
+// CB最低限
+const cbTable = {
+"00":"RLC B","01":"RLC C","02":"RLC D","03":"RLC E",
+"04":"RLC H","05":"RLC L","07":"RLC A",
+"10":"RL B","11":"RL C","12":"RL D","13":"RL E",
+"17":"RL A"
+};
+
+function getLabel(a){
+if(!labels[a]){
+labels[a] = "L_" + a.toString(16).toUpperCase();
+}
+return labels[a];
+}
 
 while(i < hex.length){
 
 let op = hex.substr(i,2);
 let line = "";
 let size = 1;
+let jumpTarget = null;
 
 // =====================
-// 1バイト命令
+// CB
 // =====================
-if(op === "00") line = "NOP";
-else if(op === "C9") line = "RET";
-
-// =====================
-// 2バイト即値
-// =====================
-else if(op === "3E"){ line = "LD A,$"+hex.substr(i+2,2); size=2; }
-else if(op === "06"){ line = "LD B,$"+hex.substr(i+2,2); size=2; }
-else if(op === "0E"){ line = "LD C,$"+hex.substr(i+2,2); size=2; }
-else if(op === "16"){ line = "LD D,$"+hex.substr(i+2,2); size=2; }
-else if(op === "1E"){ line = "LD E,$"+hex.substr(i+2,2); size=2; }
-else if(op === "26"){ line = "LD H,$"+hex.substr(i+2,2); size=2; }
-else if(op === "2E"){ line = "LD L,$"+hex.substr(i+2,2); size=2; }
-
-// =====================
-// 16bit系
-// =====================
-else if(op === "21"){ line = "LD HL,$"+hex.substr(i+4,2)+hex.substr(i+2,2); size=3; }
-else if(op === "C3"){ line = "JP $"+hex.substr(i+4,2)+hex.substr(i+2,2); size=3; }
-else if(op === "CD"){ line = "CALL $"+hex.substr(i+4,2)+hex.substr(i+2,2); size=3; }
-
-// =====================
-// JR（超重要）
-// =====================
-else if(op === "18"){
-let off = parseInt(hex.substr(i+2,2),16);
-if(off >= 0x80) off = off - 0x100;
-line = "JR "+off;
+if(op === "CB"){
+let cb = hex.substr(i+2,2);
+line = cbTable[cb] || "CB $"+cb;
 size = 2;
 }
 
 // =====================
-// CBプレフィックス
+// 基本
 // =====================
-else if(op === "CB"){
-let cb = hex.substr(i+2,2);
-line = "CB "+cb;
+else if(op === "00") line = "NOP";
+else if(op === "C9") line = "RET";
+
+else if(op === "3E"){ line = "LD A,$"+hex.substr(i+2,2); size=2; }
+else if(op === "06"){ line = "LD B,$"+hex.substr(i+2,2); size=2; }
+else if(op === "0E"){ line = "LD C,$"+hex.substr(i+2,2); size=2; }
+
+else if(op === "21"){ line = "LD HL,$"+hex.substr(i+4,2)+hex.substr(i+2,2); size=3; }
+
+// =====================
+// JP / CALL（ラベル化）
+// =====================
+else if(op === "C3"){
+let lo = hex.substr(i+2,2);
+let hi = hex.substr(i+4,2);
+jumpTarget = parseInt(hi+lo,16);
+line = "JP "+getLabel(jumpTarget);
+size = 3;
+}
+
+else if(op === "CD"){
+let lo = hex.substr(i+2,2);
+let hi = hex.substr(i+4,2);
+jumpTarget = parseInt(hi+lo,16);
+line = "CALL "+getLabel(jumpTarget);
+size = 3;
+}
+
+// =====================
+// JR（相対）
+// =====================
+else if(op === "18"){
+let off = parseInt(hex.substr(i+2,2),16);
+if(off >= 0x80) off -= 0x100;
+jumpTarget = addr + 2 + off;
+line = "JR "+getLabel(jumpTarget);
 size = 2;
 }
 
@@ -459,16 +497,15 @@ i += size * 2;
 addr += size;
 }
 
+// =====================
+// ラベル出力
+// =====================
+out += "\n; --- LABELS ---\n";
+for(let k in labels){
+out += labels[k] + " = " + k.toString(16).toUpperCase() + "\n";
+}
+
 asmOut.textContent = out;
-}
-  
-function normalizeHex(hex){
-hex = hex.replace(/[^0-9A-F]/gi,"").toUpperCase();
-let out="";
-for(let i=0;i<hex.length;i+=2){
-out += hex.substr(i,2);
-}
-return out;
 }
 </script>
 
