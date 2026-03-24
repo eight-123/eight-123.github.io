@@ -32,7 +32,7 @@ input, button, select {
 
 <!-- 16進数計算 -->
 <div class="box">
-  <h2>16進数計算（8bit wrap）</h2>
+  <h2>16進数計算（8bit）</h2>
   <input id="hex1" placeholder="例: F0">
   <input id="hex2" placeholder="例: 48">
   <br>
@@ -41,20 +41,28 @@ input, button, select {
   <p id="hexResult"></p>
 </div>
 
+<!-- 論理演算 -->
+<div class="box">
+  <h2>論理演算（8bit）</h2>
+  <input id="logic1" placeholder="例: F0">
+  <input id="logic2" placeholder="例: 0F">
+  <br>
+  <button onclick="andOp()">AND</button>
+  <button onclick="orOp()">OR</button>
+  <button onclick="xorOp()">XOR</button>
+  <p id="logicResult"></p>
+</div>
+
 <!-- 進数変換 -->
 <div class="box">
   <h2>進数変換</h2>
-
   <input id="inputValue" placeholder="値を入力">
-
   <br>
-
   <select id="base">
     <option value="10">10進数</option>
     <option value="16">16進数</option>
     <option value="2">2進数</option>
   </select>
-
   <br>
   <button onclick="convert()">変換</button>
 
@@ -63,46 +71,125 @@ input, button, select {
   <p id="hex"></p>
 </div>
 
+<!-- フラグ表示 -->
+<div class="box">
+  <h2>フラグ</h2>
+  <p id="flags">Z:0 N:0 H:0 C:0</p>
+</div>
+
 <script>
-// 16進 → 数値
-function hexToNum(h) {
-  return parseInt(h, 16);
-}
-
-// 8bit wrap
+// ===== 共通 =====
 function wrap(v) {
-  return (v & 0xFF);
+  return v & 0xFF;
 }
 
-// 加算
+function showFlags(Z, N, H, C) {
+  document.getElementById("flags").textContent =
+    "Z:" + Z + " N:" + N + " H:" + H + " C:" + C;
+}
+
+// ===== 16進数計算 =====
 function add() {
-  let a = hexToNum(document.getElementById("hex1").value);
-  let b = hexToNum(document.getElementById("hex2").value);
-  let result = wrap(a + b);
+  let a = parseInt(document.getElementById("hex1").value, 16);
+  let b = parseInt(document.getElementById("hex2").value, 16);
+
+  if (isNaN(a) || isNaN(b)) return alert("入力が不正");
+
+  let result = a + b;
+
+  let Z = ((result & 0xFF) === 0) ? 1 : 0;
+  let N = 0;
+  let H = (((a & 0xF) + (b & 0xF)) > 0xF) ? 1 : 0;
+  let C = (result > 0xFF) ? 1 : 0;
+
+  result = wrap(result);
+
   document.getElementById("hexResult").textContent =
     "結果: " + result.toString(16).toUpperCase();
+
+  showFlags(Z, N, H, C);
 }
 
-// 減算
 function sub() {
-  let a = hexToNum(document.getElementById("hex1").value);
-  let b = hexToNum(document.getElementById("hex2").value);
-  let result = wrap(a - b);
+  let a = parseInt(document.getElementById("hex1").value, 16);
+  let b = parseInt(document.getElementById("hex2").value, 16);
+
+  if (isNaN(a) || isNaN(b)) return alert("入力が不正");
+
+  let result = a - b;
+
+  let Z = ((result & 0xFF) === 0) ? 1 : 0;
+  let N = 1;
+  let H = ((a & 0xF) < (b & 0xF)) ? 1 : 0;
+  let C = (a < b) ? 1 : 0;
+
+  result = wrap(result);
+
   document.getElementById("hexResult").textContent =
+    "結果: " + result.toString(16).toUpperCase();
+
+  showFlags(Z, N, H, C);
+}
+
+// ===== 論理演算 =====
+function logicPrep() {
+  let a = parseInt(document.getElementById("logic1").value, 16);
+  let b = parseInt(document.getElementById("logic2").value, 16);
+
+  if (isNaN(a) || isNaN(b)) {
+    alert("入力が不正");
+    return null;
+  }
+
+  return [wrap(a), wrap(b)];
+}
+
+function showResult(result) {
+  document.getElementById("logicResult").textContent =
     "結果: " + result.toString(16).toUpperCase();
 }
 
-// 進数変換（基準選択）
+function andOp() {
+  let vals = logicPrep();
+  if (!vals) return;
+  let [a, b] = vals;
+
+  let result = a & b;
+
+  showResult(result);
+  showFlags(result === 0 ? 1 : 0, 0, 1, 0);
+}
+
+function orOp() {
+  let vals = logicPrep();
+  if (!vals) return;
+  let [a, b] = vals;
+
+  let result = a | b;
+
+  showResult(result);
+  showFlags(result === 0 ? 1 : 0, 0, 0, 0);
+}
+
+function xorOp() {
+  let vals = logicPrep();
+  if (!vals) return;
+  let [a, b] = vals;
+
+  let result = a ^ b;
+
+  showResult(result);
+  showFlags(result === 0 ? 1 : 0, 0, 0, 0);
+}
+
+// ===== 進数変換 =====
 function convert() {
   let val = document.getElementById("inputValue").value.trim();
   let base = Number(document.getElementById("base").value);
 
   let num = parseInt(val, base);
 
-  if (isNaN(num)) {
-    alert("入力が不正");
-    return;
-  }
+  if (isNaN(num)) return alert("入力が不正");
 
   document.getElementById("bin").textContent =
     "2進数: " + num.toString(2);
