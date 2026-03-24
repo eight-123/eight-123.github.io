@@ -1,25 +1,119 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>計算ツール</title>
+<meta charset="UTF-8">
+<title>GB計算＆進数変換ツール</title>
+
+<style>
+body {
+  background: #111;
+  color: #0f0;
+  font-family: monospace;
+  text-align: center;
+}
+
+input, button, select {
+  margin: 5px;
+  padding: 8px;
+  font-size: 16px;
+}
+
+.box {
+  margin: 20px;
+  padding: 15px;
+  border: 1px solid #0f0;
+}
+</style>
 </head>
 
 <body>
-  <h1>計算ツール</h1>
 
-  <input id="num1" type="number">
-  <input id="num2" type="number">
-  <button onclick="calc()">計算</button>
+<h1>GB計算＆進数変換ツール</h1>
 
-  <p id="result"></p>
+<!-- 16進数計算 -->
+<div class="box">
+  <h2>16進数計算（8bit wrap）</h2>
+  <input id="hex1" placeholder="例: F0">
+  <input id="hex2" placeholder="例: 48">
+  <br>
+  <button onclick="add()">+</button>
+  <button onclick="sub()">-</button>
+  <p id="hexResult"></p>
+</div>
 
-  <script>
-    function calc() {
-      let a = Number(document.getElementById("num1").value);
-      let b = Number(document.getElementById("num2").value);
-      document.getElementById("result").textContent = a + b;
-    }
-  </script>
+<!-- 進数変換 -->
+<div class="box">
+  <h2>進数変換</h2>
+
+  <input id="inputValue" placeholder="値を入力">
+
+  <br>
+
+  <select id="base">
+    <option value="10">10進数</option>
+    <option value="16">16進数</option>
+    <option value="2">2進数</option>
+  </select>
+
+  <br>
+  <button onclick="convert()">変換</button>
+
+  <p id="bin"></p>
+  <p id="dec"></p>
+  <p id="hex"></p>
+</div>
+
+<script>
+// 16進 → 数値
+function hexToNum(h) {
+  return parseInt(h, 16);
+}
+
+// 8bit wrap
+function wrap(v) {
+  return (v & 0xFF);
+}
+
+// 加算
+function add() {
+  let a = hexToNum(document.getElementById("hex1").value);
+  let b = hexToNum(document.getElementById("hex2").value);
+  let result = wrap(a + b);
+  document.getElementById("hexResult").textContent =
+    "結果: " + result.toString(16).toUpperCase();
+}
+
+// 減算
+function sub() {
+  let a = hexToNum(document.getElementById("hex1").value);
+  let b = hexToNum(document.getElementById("hex2").value);
+  let result = wrap(a - b);
+  document.getElementById("hexResult").textContent =
+    "結果: " + result.toString(16).toUpperCase();
+}
+
+// 進数変換（基準選択）
+function convert() {
+  let val = document.getElementById("inputValue").value.trim();
+  let base = Number(document.getElementById("base").value);
+
+  let num = parseInt(val, base);
+
+  if (isNaN(num)) {
+    alert("入力が不正");
+    return;
+  }
+
+  document.getElementById("bin").textContent =
+    "2進数: " + num.toString(2);
+
+  document.getElementById("dec").textContent =
+    "10進数: " + num;
+
+  document.getElementById("hex").textContent =
+    "16進数: " + num.toString(16).toUpperCase();
+}
+</script>
+
 </body>
 </html>
