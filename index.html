@@ -2,203 +2,187 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>GB計算＆進数変換ツール</title>
+<title>GB解析ツール</title>
 
 <style>
-body {
-  background: #111;
-  color: #0f0;
-  font-family: monospace;
-  text-align: center;
-}
-
-input, button, select {
-  margin: 5px;
-  padding: 8px;
-  font-size: 16px;
-}
-
-.box {
-  margin: 20px;
-  padding: 15px;
-  border: 1px solid #0f0;
-}
+body { background:#111; color:#0f0; font-family:monospace; text-align:center; }
+input,button,select,textarea { margin:5px; padding:8px; font-size:14px; }
+.box { margin:20px; padding:15px; border:1px solid #0f0; }
+textarea { width:90%; height:80px; }
 </style>
 </head>
 
 <body>
 
-<h1>GB計算＆進数変換ツール</h1>
+<h1>GB解析ツール</h1>
 
-<!-- 16進数計算 -->
 <div class="box">
-  <h2>16進数計算（8bit）</h2>
-  <input id="hex1" placeholder="例: F0">
-  <input id="hex2" placeholder="例: 48">
-  <br>
-  <button onclick="add()">+</button>
-  <button onclick="sub()">-</button>
-  <p id="hexResult"></p>
+<h2>16進数計算</h2>
+<input id="hex1"><input id="hex2"><br>
+<button onclick="add()">+</button>
+<button onclick="sub()">-</button>
+<p id="hexResult"></p>
 </div>
 
-<!-- 論理演算 -->
 <div class="box">
-  <h2>論理演算（8bit）</h2>
-  <input id="logic1" placeholder="例: F0">
-  <input id="logic2" placeholder="例: 0F">
-  <br>
-  <button onclick="andOp()">AND</button>
-  <button onclick="orOp()">OR</button>
-  <button onclick="xorOp()">XOR</button>
-  <p id="logicResult"></p>
+<h2>論理演算</h2>
+<input id="logic1"><input id="logic2"><br>
+<button onclick="andOp()">AND</button>
+<button onclick="orOp()">OR</button>
+<button onclick="xorOp()">XOR</button>
+<p id="logicResult"></p>
 </div>
 
-<!-- 進数変換 -->
 <div class="box">
-  <h2>進数変換</h2>
-  <input id="inputValue" placeholder="値を入力">
-  <br>
-  <select id="base">
-    <option value="10">10進数</option>
-    <option value="16">16進数</option>
-    <option value="2">2進数</option>
-  </select>
-  <br>
-  <button onclick="convert()">変換</button>
-
-  <p id="bin"></p>
-  <p id="dec"></p>
-  <p id="hex"></p>
+<h2>フラグ</h2>
+<p id="flags">Z:0 N:0 H:0 C:0</p>
 </div>
 
-<!-- フラグ表示 -->
 <div class="box">
-  <h2>フラグ</h2>
-  <p id="flags">Z:0 N:0 H:0 C:0</p>
+<h2>進数変換</h2>
+<input id="inputValue">
+<select id="base">
+<option value="10">10進</option>
+<option value="16">16進</option>
+<option value="2">2進</option>
+</select><br>
+<button onclick="convert()">変換</button>
+<p id="bin"></p><p id="dec"></p><p id="hex"></p>
+</div>
+
+<div class="box">
+<h2>GB文字変換（フル）</h2>
+
+<textarea id="hexInput" placeholder="HEX入力"></textarea><br>
+<button onclick="hexToText()">HEX→文字</button>
+
+<br><br>
+
+<textarea id="textInput" placeholder="文字入力"></textarea><br>
+<button onclick="textToHex()">文字→HEX（5文字50区切り）</button>
+
+<p id="textResult"></p>
+<p id="hexResult2"></p>
 </div>
 
 <script>
 // ===== 共通 =====
-function wrap(v) {
-  return v & 0xFF;
+function wrap(v){return v&0xFF;}
+function showFlags(Z,N,H,C){
+flags.textContent=`Z:${Z} N:${N} H:${H} C:${C}`;
 }
 
-function showFlags(Z, N, H, C) {
-  document.getElementById("flags").textContent =
-    "Z:" + Z + " N:" + N + " H:" + H + " C:" + C;
+// ===== 計算 =====
+function add(){
+let a=parseInt(hex1.value,16),b=parseInt(hex2.value,16);
+if(isNaN(a)||isNaN(b))return alert("入力不正");
+let r=a+b;
+let Z=((r&0xFF)==0)?1:0,N=0,H=((a&0xF)+(b&0xF)>0xF)?1:0,C=(r>0xFF)?1:0;
+r=wrap(r);
+hexResult.textContent="結果:"+r.toString(16).toUpperCase();
+showFlags(Z,N,H,C);
+}
+function sub(){
+let a=parseInt(hex1.value,16),b=parseInt(hex2.value,16);
+if(isNaN(a)||isNaN(b))return alert("入力不正");
+let r=a-b;
+let Z=((r&0xFF)==0)?1:0,N=1,H=((a&0xF)<(b&0xF))?1:0,C=(a<b)?1:0;
+r=wrap(r);
+hexResult.textContent="結果:"+r.toString(16).toUpperCase();
+showFlags(Z,N,H,C);
 }
 
-// ===== 16進数計算 =====
-function add() {
-  let a = parseInt(document.getElementById("hex1").value, 16);
-  let b = parseInt(document.getElementById("hex2").value, 16);
+// ===== 論理 =====
+function prep(){
+let a=parseInt(logic1.value,16),b=parseInt(logic2.value,16);
+if(isNaN(a)||isNaN(b))return null;
+return [wrap(a),wrap(b)];
+}
+function showRes(r){logicResult.textContent="結果:"+r.toString(16).toUpperCase();}
+function andOp(){let v=prep();if(!v)return;let r=v[0]&v[1];showRes(r);showFlags(r==0?1:0,0,1,0);}
+function orOp(){let v=prep();if(!v)return;let r=v[0]|v[1];showRes(r);showFlags(r==0?1:0,0,0,0);}
+function xorOp(){let v=prep();if(!v)return;let r=v[0]^v[1];showRes(r);showFlags(r==0?1:0,0,0,0);}
 
-  if (isNaN(a) || isNaN(b)) return alert("入力が不正");
-
-  let result = a + b;
-
-  let Z = ((result & 0xFF) === 0) ? 1 : 0;
-  let N = 0;
-  let H = (((a & 0xF) + (b & 0xF)) > 0xF) ? 1 : 0;
-  let C = (result > 0xFF) ? 1 : 0;
-
-  result = wrap(result);
-
-  document.getElementById("hexResult").textContent =
-    "結果: " + result.toString(16).toUpperCase();
-
-  showFlags(Z, N, H, C);
+// ===== 進数 =====
+function convert(){
+let val=inputValue.value.trim();
+let base=Number(document.getElementById("base").value);
+let num=parseInt(val,base);
+if(isNaN(num))return alert("不正");
+bin.textContent="2進:"+num.toString(2);
+dec.textContent="10進:"+num;
+hex.textContent="16進:"+num.toString(16).toUpperCase();
 }
 
-function sub() {
-  let a = parseInt(document.getElementById("hex1").value, 16);
-  let b = parseInt(document.getElementById("hex2").value, 16);
+// ===== フルテーブル =====
+const table = {
+"00":"-","01":"イ゛","02":"ウ゛","03":"エ゛","04":"オ゛","05":"ガ","06":"ギ","07":"グ","08":"ゲ","09":"ゴ",
+"0A":"ザ","0B":"ジ","0C":"ズ","0D":"ゼ","0E":"ゾ","0F":"ダ",
+"10":"ヂ","11":"ヅ","12":"デ","13":"ド","14":"ナ゛","15":"ニ゛","16":"ヌ゛","17":"ネ゛","18":"ノ゛","19":"バ",
+"1A":"ビ","1B":"ブ","1C":"ボ","1D":"マ゛","1E":"ミ゛","1F":"ム゛",
+"20":"ィ゛","21":"あ゛","22":"い゛","23":"?","24":"え゛","25":"お゛",
+"26":"が","27":"ぎ","28":"ぐ","29":"げ","2A":"ご","2B":"ざ","2C":"じ","2D":"ず","2E":"ぜ","2F":"ぞ",
+"30":"だ","31":"ぢ","32":"づ","33":"で","34":"ど","35":"な゛","36":"に゛","37":"ぬ゛","38":"ね゛","39":"の゛",
+"3A":"ば","3B":"び","3C":"ぶ","3D":"べ","3E":"ぼ","3F":"ま゛",
+"40":"パ","41":"ピ","42":"プ","43":"ポ","44":"ぱ","45":"ぴ","46":"ぷ","47":"ぺ","48":"ぽ",
+"49":"ま゜","4A":"み゜","4B":"[送]","4C":"[自動]","4D":"も゜","4E":"[1行改行]","4F":"\n",
+"50":"[終]","51":"[送]","52":"[主人公]","53":"[ライバル]","54":"0","55":"[送]","56":"……","57":"[無効]",
+"58":"[改頁]","59":"[ポケ1]","5A":"[ポケ2]","5B":"[PC]","5C":"[技マシン]","5D":"[トレーナー]","5E":"[ロケット団]","5F":"、、゜",
+"60":"A","61":"B","62":"]","63":"[HP0]","64":"[HP1]","65":"[HP2]","66":"[HP3]","67":"[HP4]","68":"[HP5]","69":"[HP6]","6A":"[HP7]","6B":"[HP8]",
+"6C":",","6D":",||","6E":":L","6F":"<","70":"ど","71":"H1","72":"『","73":"ID","74":"No","75":"…","76":"━","77":"￣","78":">",
+"79":"┏","7A":"＝","7B":"┓","7C":"||","7D":"┗","7E":"┛","7F":" ",
+"80":"ア","81":"イ","82":"ウ","83":"エ","84":"オ","85":"カ","86":"キ","87":"ク","88":"ケ","89":"コ",
+"8A":"サ","8B":"シ","8C":"ス","8D":"セ","8E":"ソ","8F":"タ","90":"チ","91":"ツ","92":"テ","93":"ト",
+"94":"ナ","95":"ニ","96":"ヌ","97":"ネ","98":"ノ","99":"ハ","9A":"ヒ","9B":"フ","9C":"ホ",
+"9D":"マ","9E":"ミ","9F":"ム","A0":"メ","A1":"モ","A2":"ヤ","A3":"ユ","A4":"ヨ",
+"A5":"ラ","A6":"ル","A7":"レ","A8":"ロ","A9":"ワ","AA":"ヲ","AB":"ン","AC":"ッ","AD":"ャ","AE":"ュ","AF":"ョ",
+"B0":"ィ","B1":"あ","B2":"い","B3":"う","B4":"え","B5":"お","B6":"か","B7":"き","B8":"く","B9":"け","BA":"こ",
+"BB":"さ","BC":"し","BD":"す","BE":"せ","BF":"そ",
+"C0":"た","C1":"ち","C2":"つ","C3":"て","C4":"と","C5":"な","C6":"に","C7":"ぬ","C8":"ね","C9":"の",
+"CA":"は","CB":"ひ","CC":"ふ","CD":"へ","CE":"ほ","CF":"ま","D0":"み","D1":"む","D2":"め","D3":"も",
+"D4":"や","D5":"ゆ","D6":"よ","D7":"ら","D8":"り","D9":"る","DA":"れ","DB":"ろ","DC":"わ","DD":"を","DE":"ん",
+"DF":"っ","E0":"ゃ","E1":"ゅ","E2":"ょ","E3":"ー","E4":"ﾟ","E5":"゛","E6":"？","E7":"！","E8":"。",
+"E9":"ァ","EA":"ゥ","EB":"ェ","EC":"[白カーソル]","ED":"[黒カーソル]","EE":"▼","EF":"♂",
+"F0":"円","F1":"×","F2":"．","F3":"／","F4":"ォ","F5":"♀",
+"F6":"0","F7":"1","F8":"2","F9":"3","FA":"4","FB":"5","FC":"6","FD":"7","FE":"8","FF":"9"
+};
 
-  if (isNaN(a) || isNaN(b)) return alert("入力が不正");
+const reverseTable={};
+for(let k in table){if(!table[k].startsWith("["))reverseTable[table[k]]=k;}
 
-  let result = a - b;
-
-  let Z = ((result & 0xFF) === 0) ? 1 : 0;
-  let N = 1;
-  let H = ((a & 0xF) < (b & 0xF)) ? 1 : 0;
-  let C = (a < b) ? 1 : 0;
-
-  result = wrap(result);
-
-  document.getElementById("hexResult").textContent =
-    "結果: " + result.toString(16).toUpperCase();
-
-  showFlags(Z, N, H, C);
+// ===== HEX→文字 =====
+function hexToText(){
+let clean=hexInput.value.toUpperCase().replace(/[^0-9A-F]/g,"");
+let res="";
+for(let i=0;i<clean.length;i+=2){
+let c=clean.substr(i,2);
+res+=table[c]||"["+c+"]";
+}
+textResult.textContent=res;
 }
 
-// ===== 論理演算 =====
-function logicPrep() {
-  let a = parseInt(document.getElementById("logic1").value, 16);
-  let b = parseInt(document.getElementById("logic2").value, 16);
+// ===== 文字→HEX（5文字50）=====
+function textToHex(){
+let input=textInput.value;
+let result=[],block=[];
 
-  if (isNaN(a) || isNaN(b)) {
-    alert("入力が不正");
-    return null;
-  }
+for(let ch of input){
+if(ch=="\n")continue;
+let code=reverseTable[ch]||"??";
+block.push(code);
 
-  return [wrap(a), wrap(b)];
+if(block.length===5){
+result.push(...block,"50");
+block=[];
+}
 }
 
-function showResult(result) {
-  document.getElementById("logicResult").textContent =
-    "結果: " + result.toString(16).toUpperCase();
+if(block.length>0){
+while(block.length<5)block.push("50");
+result.push(...block,"50");
 }
 
-function andOp() {
-  let vals = logicPrep();
-  if (!vals) return;
-  let [a, b] = vals;
-
-  let result = a & b;
-
-  showResult(result);
-  showFlags(result === 0 ? 1 : 0, 0, 1, 0);
-}
-
-function orOp() {
-  let vals = logicPrep();
-  if (!vals) return;
-  let [a, b] = vals;
-
-  let result = a | b;
-
-  showResult(result);
-  showFlags(result === 0 ? 1 : 0, 0, 0, 0);
-}
-
-function xorOp() {
-  let vals = logicPrep();
-  if (!vals) return;
-  let [a, b] = vals;
-
-  let result = a ^ b;
-
-  showResult(result);
-  showFlags(result === 0 ? 1 : 0, 0, 0, 0);
-}
-
-// ===== 進数変換 =====
-function convert() {
-  let val = document.getElementById("inputValue").value.trim();
-  let base = Number(document.getElementById("base").value);
-
-  let num = parseInt(val, base);
-
-  if (isNaN(num)) return alert("入力が不正");
-
-  document.getElementById("bin").textContent =
-    "2進数: " + num.toString(2);
-
-  document.getElementById("dec").textContent =
-    "10進数: " + num;
-
-  document.getElementById("hex").textContent =
-    "16進数: " + num.toString(16).toUpperCase();
+hexResult2.textContent=result.join(" ");
 }
 </script>
 
