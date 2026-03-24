@@ -385,7 +385,7 @@ let labelNames={};
 let id=0;
 for(let addr in labels){
   let a = parseInt(addr);
-  labelNames[a] = "L" + hex(a,4);
+  labelNames[a] = hex(a,4);
 }
 // ===== 2パス目 =====
 pc=start;
