@@ -31,7 +31,18 @@ font-weight:bold;
 </head>
 
 <body>
+<div class="box">
+<h2>逆アセンブル</h2>
 
+<textarea id="disInput" placeholder="例: 3E 10 06 20"></textarea><br>
+
+開始アドレス:
+<input id="startAddr" value="0000">
+
+<button onclick="disassemble()">実行</button>
+
+<pre id="disOut"></pre>
+</div>
 <h1>GB解析ツール</h1>
 
 <!-- 計算 -->
@@ -286,7 +297,154 @@ out.push(c);
 }
 hexOut.textContent=out.join(" ");
 }
+// ===== 逆アセンブル用 =====
 
+// 命令テーブル
+const OPCODES = {
+  0x00:{m:"NOP",s:1},
+
+  0x3E:{m:"LD A,d8",s:2},
+  0x06:{m:"LD B,d8",s:2},
+  0x0E:{m:"LD C,d8",s:2},
+
+  0xAF:{m:"XOR A",s:1},
+
+  0x32:{m:"LDD (HL),A",s:1},
+
+  0xCD:{m:"CALL a16",s:3},
+  0xC3:{m:"JP a16",s:3},
+
+  0x18:{m:"JR r8",s:2},
+  0x20:{m:"JR NZ,r8",s:2},
+  0x28:{m:"JR Z,r8",s:2},
+
+  0xE0:{m:"LDH (a8),A",s:2},
+  0xF0:{m:"LDH A,(a8)",s:2},
+
+  0xCB:{m:"PREFIX CB",s:1}
+};
+
+// CB命令
+const OPCODES_CB = {
+  0x11:"RL C",
+  0x7C:"BIT 7,H",
+  0x37:"SWAP A"
+};
+
+// hex表示
+function hex(v,d){
+return v.toString(16).toUpperCase().padStart(d,"0");
+}
+
+// 逆アセンブル本体
+function disassemble(){
+
+let raw = disInput.value.replace(/[^0-9A-F]/gi,"");
+let bytes=[];
+for(let i=0;i<raw.length;i+=2){
+  bytes.push(parseInt(raw.substr(i,2),16));
+}
+
+let start = parseInt(startAddr.value,16)||0;
+
+// ===== 1パス目：ジャンプ先収集 =====
+let labels={};
+let pc=start;
+let i=0;
+
+while(i<bytes.length){
+  let op=bytes[i];
+
+  if(op===0x18||op===0x20||op===0x28){
+    let offset = (bytes[i+1]<<24)>>24;
+    let target = pc + 2 + offset;
+    labels[target]=true;
+    i+=2; pc+=2;
+    continue;
+  }
+
+  if(op===0xC3||op===0xCD){
+    let lo=bytes[i+1];
+    let hi=bytes[i+2];
+    let addr=(hi<<8)|lo;
+    labels[addr]=true;
+    i+=3; pc+=3;
+    continue;
+  }
+
+  let def=OPCODES[op];
+  let size=def?def.s:1;
+  i+=size;
+  pc+=size;
+}
+
+// ラベル名生成
+let labelNames={};
+let id=0;
+for(let addr in labels){
+  labelNames[addr]="L"+hex(id++,4);
+}
+
+// ===== 2パス目 =====
+pc=start;
+i=0;
+let out=[];
+
+while(i<bytes.length){
+
+  if(labelNames[pc]){
+    out.push(labelNames[pc]+":");
+  }
+
+  let op=bytes[i];
+
+  if(op===0xCB){
+    let cb=bytes[i+1];
+    let name=OPCODES_CB[cb]||"???";
+    out.push(`${hex(pc,4)}: CB ${hex(cb,2)}  ${name}`);
+    i+=2; pc+=2;
+    continue;
+  }
+
+  let def=OPCODES[op];
+
+  if(!def){
+    out.push(`${hex(pc,4)}: ${hex(op,2)}  ???`);
+    i+=1; pc+=1;
+    continue;
+  }
+
+  let inst = bytes.slice(i,i+def.s);
+  let text = def.m;
+
+  if(def.s===2){
+    let d=inst[1];
+
+    if(text.includes("r8")){
+      let offset = (d<<24)>>24;
+      let target = pc + 2 + offset;
+      text = text.replace("r8", labelNames[target]||hex(target,4));
+    }else{
+      text = text.replace("d8",hex(d,2))
+                 .replace("a8",hex(d,2));
+    }
+  }
+
+  if(def.s===3){
+    let lo=inst[1];
+    let hi=inst[2];
+    let addr=(hi<<8)|lo;
+    text = text.replace("a16",labelNames[addr]||hex(addr,4));
+  }
+
+  out.push(`${hex(pc,4)}: ${inst.map(b=>hex(b,2)).join(" ")}  ${text}`);
+
+  i+=def.s;
+  pc+=def.s;
+}
+
+disOut.textContent=out.join("\n");
+}
 </script>
 
 </body>
