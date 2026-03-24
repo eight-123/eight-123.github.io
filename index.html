@@ -124,6 +124,46 @@ font-weight:bold;
 </div>
 
 <script>
+//////////////////////////////////////////////////////
+// ★ CB命令 完全256
+//////////////////////////////////////////////////////
+
+const cbTable = {};
+const regs = ["B","C","D","E","H","L","(HL)","A"];
+
+// --- rotate ---
+const rotOps = ["RLC","RRC","RL","RR","SLA","SRA","SWAP","SRL"];
+
+for(let g=0;g<8;g++){
+for(let r=0;r<8;r++){
+let op = (g*8+r).toString(16).toUpperCase().padStart(2,"0");
+cbTable[op] = { mnemonic: rotOps[g]+" "+regs[r], size:2 };
+}
+}
+
+// --- BIT ---
+for(let b=0;b<8;b++){
+for(let r=0;r<8;r++){
+let op=(0x40+b*8+r).toString(16).toUpperCase();
+cbTable[op]={ mnemonic:`BIT ${b},${regs[r]}`, size:2 };
+}
+}
+
+// --- RES ---
+for(let b=0;b<8;b++){
+for(let r=0;r<8;r++){
+let op=(0x80+b*8+r).toString(16).toUpperCase();
+cbTable[op]={ mnemonic:`RES ${b},${regs[r]}`, size:2 };
+}
+}
+
+// --- SET ---
+for(let b=0;b<8;b++){
+for(let r=0;r<8;r++){
+let op=(0xC0+b*8+r).toString(16).toUpperCase();
+cbTable[op]={ mnemonic:`SET ${b},${regs[r]}`, size:2 };
+}
+}
 
 //////////////////////////////////////////////////////
 // フラグ
@@ -420,6 +460,7 @@ if(!labels[a]) labels[a]="L"+(labelId++);
 return labels[a];
 }
 
+
 // =====================
 // CB命令（簡易完全展開）
 // =====================
@@ -448,11 +489,17 @@ let size=1;
 // CBプレフィックス
 // ---------------------
 if(op==="CB"){
-let c = hex.substr(i+2,2);
-line = cbMap[c] || ("CB $"+c);
-size=2;
-}
+let sub = hex.substr(i+2,2);
+let info = cbTable[sub];
 
+if(info){
+line = info.mnemonic;
+size = 2;
+}else{
+line = "CB $" + sub;
+size = 2;
+}
+}
 // ---------------------
 // 即値ロード系
 // ---------------------
