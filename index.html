@@ -9,7 +9,8 @@ body{background:#111;color:#0f0;font-family:monospace;text-align:center;}
 .box{border:1px solid #0f0;margin:15px;padding:10px;}
 textarea{width:90%;height:100px;}
 input,button,select{margin:5px;padding:5px;}
-pre{text-align:left;}
+pre{text-align:left;white-space:pre-wrap;}
+.history{max-height:150px;overflow:auto;border:1px solid #0f0;padding:5px;}
 </style>
 </head>
 
@@ -20,11 +21,20 @@ pre{text-align:left;}
 <!-- 計算 -->
 <div class="box">
 <h2>16進計算（GB仕様）</h2>
-<input id="hex1"><input id="hex2"><br>
+<input id="hex1" placeholder="例:0E">
+<input id="hex2" placeholder="例:10"><br>
 <button onclick="add()">+</button>
 <button onclick="sub()">-</button>
-<p id="hexResult"></p>
-<p id="flags"></p>
+
+<p>
+結果: <span id="hexResult"></span><br>
+フラグ: <span id="flags"></span>
+</p>
+
+<h3>履歴</h3>
+<div id="history" class="history"></div>
+<button onclick="copyHistory()">履歴コピー</button>
+<button onclick="clearHistory()">履歴クリア</button>
 </div>
 
 <!-- 論理 -->
@@ -47,20 +57,22 @@ pre{text-align:left;}
 <option value="2">2</option>
 </select><br>
 <button onclick="convert()">変換</button>
-<p id="bin"></p><p id="dec"></p><p id="hex"></p>
+<p id="bin"></p>
+<p id="dec"></p>
+<p id="hex"></p>
 </div>
 
-<!-- 文字 -->
+<!-- 文字変換 -->
 <div class="box">
 <h2>GB文字変換</h2>
 
-<textarea id="hexInput"></textarea><br>
+<textarea id="hexInput" placeholder="HEX入力"></textarea><br>
 <button onclick="hexToText()">HEX→文字</button>
 <button onclick="copyText()">コピー</button>
 
 <br><br>
 
-<textarea id="textInput"></textarea><br>
+<textarea id="textInput" placeholder="文字入力（①対応）"></textarea><br>
 <button onclick="textToHex()">文字→HEX（5文字50）</button>
 <button onclick="copyHex()">コピー</button>
 
@@ -70,11 +82,11 @@ pre{text-align:left;}
 
 <!-- 逆アセンブラ -->
 <div class="box">
-<h2>逆アセンブラ</h2>
+<h2>逆アセンブラ（ジャンプ計算付き）</h2>
 
 開始アドレス: <input id="startAddr" placeholder="4000"><br>
 
-<textarea id="asmInput"></textarea><br>
+<textarea id="asmInput" placeholder="例: 3E F0 18 FE"></textarea><br>
 <button onclick="disasm()">逆アセンブル</button>
 <button onclick="copyAsm()">コピー</button>
 
@@ -85,21 +97,63 @@ pre{text-align:left;}
 // ===== 共通 =====
 function wrap(v){return v&0xFF;}
 function setFlags(Z,N,H,C){
-flags.textContent=`Z:${Z} N:${N} H:${H} C:${C}`;
+document.getElementById("flags").textContent =
+`Z:${Z} N:${N} H:${H} C:${C}`;
+return {Z,N,H,C};
+}
+
+// ===== 履歴 =====
+let historyLog=[];
+function addHistory(text){
+historyLog.push(text);
+document.getElementById("history").innerHTML=
+historyLog.join("<br>");
+}
+function copyHistory(){
+navigator.clipboard.writeText(historyLog.join("\n"));
+}
+function clearHistory(){
+historyLog=[];
+document.getElementById("history").innerHTML="";
 }
 
 // ===== 計算 =====
 function add(){
-let a=parseInt(hex1.value,16),b=parseInt(hex2.value,16);
+let a=parseInt(hex1.value,16);
+let b=parseInt(hex2.value,16);
+if(isNaN(a)||isNaN(b)) return;
+
 let r=a+b;
-setFlags((r&0xFF)==0?1:0,0,((a&0xF)+(b&0xF)>0xF)?1:0,r>0xFF?1:0);
-hexResult.textContent=wrap(r).toString(16).toUpperCase();
-}
-function sub(){
-let a=parseInt(hex1.value,16),b=parseInt(hex2.value,16);
-let r=a-b,w=r&0xFF;
-setFlags(w===0?1:0,1,(a&0xF)<(b&0xF)?1:0,a<b?1:0);
+let w=r&0xFF;
+
+let Z=(w===0)?1:0;
+let N=0;
+let H=((a&0xF)+(b&0xF)>0xF)?1:0;
+let C=(r>0xFF)?1:0;
+
 hexResult.textContent=w.toString(16).toUpperCase();
+let f=setFlags(Z,N,H,C);
+
+addHistory(`${hex1.value} + ${hex2.value} = ${w.toString(16).toUpperCase()} | Z:${f.Z} N:${f.N} H:${f.H} C:${f.C}`);
+}
+
+function sub(){
+let a=parseInt(hex1.value,16);
+let b=parseInt(hex2.value,16);
+if(isNaN(a)||isNaN(b)) return;
+
+let r=a-b;
+let w=r&0xFF;
+
+let Z=(w===0)?1:0;
+let N=1;
+let H=((a&0xF)<(b&0xF))?1:0;
+let C=(a<b)?1:0;
+
+hexResult.textContent=w.toString(16).toUpperCase();
+let f=setFlags(Z,N,H,C);
+
+addHistory(`${hex1.value} - ${hex2.value} = ${w.toString(16).toUpperCase()} | Z:${f.Z} N:${f.N} H:${f.H} C:${f.C}`);
 }
 
 // ===== 論理 =====
@@ -110,26 +164,14 @@ function xorOp(){logicResult.textContent=(parseInt(logic1.value,16)^parseInt(log
 // ===== 進数 =====
 function convert(){
 let v=parseInt(inputValue.value,Number(base.value));
+if(isNaN(v)) return;
 bin.textContent=v.toString(2);
 dec.textContent=v;
 hex.textContent=v.toString(16).toUpperCase();
 }
 
-// ===== フル文字テーブル（完全）=====
-const table = {
-"80":"ア","81":"イ","82":"ウ","83":"エ","84":"オ","85":"カ","86":"キ","87":"ク","88":"ケ","89":"コ",
-"8A":"サ","8B":"シ","8C":"ス","8D":"セ","8E":"ソ","8F":"タ","90":"チ","91":"ツ","92":"テ","93":"ト",
-"94":"ナ","95":"ニ","96":"ヌ","97":"ネ","98":"ノ","99":"ハ","9A":"ヒ","9B":"フ","9C":"ホ",
-"9D":"マ","9E":"ミ","9F":"ム","A0":"メ","A1":"モ","A2":"ヤ","A3":"ユ","A4":"ヨ",
-"A5":"ラ","A6":"ル","A7":"レ","A8":"ロ","A9":"ワ","AA":"ヲ","AB":"ン","AC":"ッ","AD":"ャ","AE":"ュ","AF":"ョ",
-"B0":"ィ","B1":"あ","B2":"い","B3":"う","B4":"え","B5":"お","B6":"か","B7":"き","B8":"く","B9":"け","BA":"こ",
-"BB":"さ","BC":"し","BD":"す","BE":"せ","BF":"そ",
-"C0":"た","C1":"ち","C2":"つ","C3":"て","C4":"と","C5":"な","C6":"に","C7":"ぬ","C8":"ね","C9":"の",
-"CA":"は","CB":"ひ","CC":"ふ","CD":"へ","CE":"ほ",
-"D0":"み","D1":"む","D2":"め","D3":"も","D4":"や","D5":"ゆ","D6":"よ",
-"4F":"\n","50":"[終]"
-};
-
+// ===== 文字テーブル =====
+const table={"80":"ア","81":"イ","82":"ウ","4F":"\n","50":"[終]","B1":"あ","B2":"い","B3":"う","B4":"え","B5":"お","B6":"か","B7":"き","B8":"く","B9":"け","BA":"こ"};
 const reverse={};
 for(let k in table){if(!table[k].startsWith("["))reverse[table[k]]=k;}
 
@@ -152,10 +194,7 @@ let block=[];
 for(let ch of line){
 let code=reverse[ch]||"??";
 block.push(code);
-if(block.length===5){
-res.push(...block,"50");
-block=[];
-}
+if(block.length===5){res.push(...block,"50");block=[];}
 }
 if(block.length>0){
 while(block.length<5)block.push("50");
@@ -165,7 +204,6 @@ res.push(...block,"50");
 hexResult2.textContent=res.join(" ");
 }
 
-// ===== コピー =====
 function copyHex(){navigator.clipboard.writeText(hexResult2.textContent);}
 function copyText(){navigator.clipboard.writeText(textResult.textContent);}
 
