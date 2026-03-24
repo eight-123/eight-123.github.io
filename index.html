@@ -389,75 +389,85 @@ hexOut.textContent=out.join(" ");
 //////////////////////////////////////////////////////
 function disasm(){
 
-let hex=normalizeHex(asm.value);
-let addr=parseInt(start.value,16)||0;
+let hex = normalizeHex(asm.value);
+let addr = parseInt(start.value,16)||0;
 
-let i=0;
-let out="";
+let i = 0;
+let out = "";
 
-while(i<hex.length){
+while(i < hex.length){
 
-let op=hex.substr(i,2);
-let line="";
-let size=1;
+let op = hex.substr(i,2);
+let line = "";
+let size = 1;
 
-switch(op){
+// =====================
+// 1バイト命令
+// =====================
+if(op === "00") line = "NOP";
+else if(op === "C9") line = "RET";
 
-case "C9":
-line="RET";
-break;
+// =====================
+// 2バイト即値
+// =====================
+else if(op === "3E"){ line = "LD A,$"+hex.substr(i+2,2); size=2; }
+else if(op === "06"){ line = "LD B,$"+hex.substr(i+2,2); size=2; }
+else if(op === "0E"){ line = "LD C,$"+hex.substr(i+2,2); size=2; }
+else if(op === "16"){ line = "LD D,$"+hex.substr(i+2,2); size=2; }
+else if(op === "1E"){ line = "LD E,$"+hex.substr(i+2,2); size=2; }
+else if(op === "26"){ line = "LD H,$"+hex.substr(i+2,2); size=2; }
+else if(op === "2E"){ line = "LD L,$"+hex.substr(i+2,2); size=2; }
 
-case "3E":
-line="LD A,$"+hex.substr(i+2,2);
-size=2;
-break;
+// =====================
+// 16bit系
+// =====================
+else if(op === "21"){ line = "LD HL,$"+hex.substr(i+4,2)+hex.substr(i+2,2); size=3; }
+else if(op === "C3"){ line = "JP $"+hex.substr(i+4,2)+hex.substr(i+2,2); size=3; }
+else if(op === "CD"){ line = "CALL $"+hex.substr(i+4,2)+hex.substr(i+2,2); size=3; }
 
-case "06":
-line="LD B,$"+hex.substr(i+2,2);
-size=2;
-break;
-
-case "0E":
-line="LD C,$"+hex.substr(i+2,2);
-size=2;
-break;
-
-case "C3":
-line="JP $"+hex.substr(i+4,2)+hex.substr(i+2,2);
-size=3;
-break;
-
-case "CD":
-line="CALL $"+hex.substr(i+4,2)+hex.substr(i+2,2);
-size=3;
-break;
-
-default:
-line="DB $"+op;
-size=1;
-break;
+// =====================
+// JR（超重要）
+// =====================
+else if(op === "18"){
+let off = parseInt(hex.substr(i+2,2),16);
+if(off >= 0x80) off = off - 0x100;
+line = "JR "+off;
+size = 2;
 }
 
-out+=addr.toString(16).toUpperCase().padStart(4,"0")
-+": "+op+"  "+line+"\n";
-
-i+=size*2;
-addr+=size;
+// =====================
+// CBプレフィックス
+// =====================
+else if(op === "CB"){
+let cb = hex.substr(i+2,2);
+line = "CB "+cb;
+size = 2;
 }
 
-asmOut.textContent=out;
+// =====================
+// 未定義
+// =====================
+else{
+line = "DB $"+op;
+size = 1;
+}
+
+out += addr.toString(16).toUpperCase().padStart(4,"0")
++ ": " + op + "  " + line + "\n";
+
+i += size * 2;
+addr += size;
+}
+
+asmOut.textContent = out;
 }
   
 function normalizeHex(hex){
 hex = hex.replace(/[^0-9A-F]/gi,"").toUpperCase();
 let out="";
-
 for(let i=0;i<hex.length;i+=2){
-let b=hex.substr(i,2);
-if(b.length<2)b="00";
-out+=b;
+out += hex.substr(i,2);
 }
-
 return out;
 }
 </script>
