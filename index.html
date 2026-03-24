@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>GB解析ツール 完全版</title>
+<title>GB解析ツール</title>
 
 <style>
 body{
@@ -10,28 +10,19 @@ background:#111;
 color:#0f0;
 font-family:monospace;
 }
-
 .box{
 border:1px solid #0f0;
 margin:10px;
 padding:10px;
 }
-
 textarea{
 width:95%;
 height:100px;
 }
-
 input,button,select{
 margin:3px;
 padding:4px;
 }
-
-pre{
-white-space:pre-wrap;
-text-align:left;
-}
-
 #flags{
 color:#0ff;
 font-weight:bold;
@@ -41,9 +32,9 @@ font-weight:bold;
 
 <body>
 
-<h1>GB解析ツール（完全安定版）</h1>
+<h1>GB解析ツール</h1>
 
-<!-- ================= 計算 ================= -->
+<!-- 計算 -->
 <div class="box">
 <h2>16bit計算（フラグ付き）</h2>
 
@@ -63,7 +54,7 @@ font-weight:bold;
 <button onclick="copyHistory()">コピー</button>
 </div>
 
-<!-- ================= 進数 ================= -->
+<!-- 進数 -->
 <div class="box">
 <h2>進数変換</h2>
 
@@ -81,7 +72,7 @@ font-weight:bold;
 <p id="out2"></p>
 </div>
 
-<!-- ================= 論理演算 ================= -->
+<!-- 論理演算 -->
 <div class="box">
 <h2>論理演算</h2>
 
@@ -95,87 +86,31 @@ font-weight:bold;
 <p id="logicOut"></p>
 </div>
 
-<!-- ================= 文字変換 ================= -->
+<!-- 文字変換 -->
 <div class="box">
 <h2>GB文字変換</h2>
 
-<textarea id="hexText" placeholder="HEX入力"></textarea><br>
+<textarea id="hexText"></textarea><br>
 <button onclick="hexToText()">HEX→文字</button>
 
 <br><br>
 
-<textarea id="text" placeholder="文字入力"></textarea><br>
-<button onclick="textToHex()">文字→HEX（5区切り+50）</button>
+<textarea id="text"></textarea><br>
+<button onclick="textToHex()">文字→HEX</button>
 
 <p id="textOut"></p>
 <p id="hexOut"></p>
 </div>
 
-<!-- ================= 逆アセンブル ================= -->
-<div class="box">
-<h2>簡易逆アセンブル</h2>
-
-開始アドレス <input id="start" value="4000"><br>
-<textarea id="asm"></textarea><br>
-
-<button onclick="disasm()">実行</button>
-
-<pre id="asmOut"></pre>
-</div>
-
 <script>
-//////////////////////////////////////////////////////
-// ★ CB命令 完全256
-//////////////////////////////////////////////////////
 
-const cbTable = {};
-const regs = ["B","C","D","E","H","L","(HL)","A"];
-
-// --- rotate ---
-const rotOps = ["RLC","RRC","RL","RR","SLA","SRA","SWAP","SRL"];
-
-for(let g=0;g<8;g++){
-for(let r=0;r<8;r++){
-let op = (g*8+r).toString(16).toUpperCase().padStart(2,"0");
-cbTable[op] = { mnemonic: rotOps[g]+" "+regs[r], size:2 };
-}
-}
-
-// --- BIT ---
-for(let b=0;b<8;b++){
-for(let r=0;r<8;r++){
-let op=(0x40+b*8+r).toString(16).toUpperCase();
-cbTable[op]={ mnemonic:`BIT ${b},${regs[r]}`, size:2 };
-}
-}
-
-// --- RES ---
-for(let b=0;b<8;b++){
-for(let r=0;r<8;r++){
-let op=(0x80+b*8+r).toString(16).toUpperCase();
-cbTable[op]={ mnemonic:`RES ${b},${regs[r]}`, size:2 };
-}
-}
-
-// --- SET ---
-for(let b=0;b<8;b++){
-for(let r=0;r<8;r++){
-let op=(0xC0+b*8+r).toString(16).toUpperCase();
-cbTable[op]={ mnemonic:`SET ${b},${regs[r]}`, size:2 };
-}
-}
-
-//////////////////////////////////////////////////////
 // フラグ
-//////////////////////////////////////////////////////
 function setFlags(Z,N,H,C){
 flags.textContent=`Z:${Z} N:${N} H:${H} C:${C}`;
 return {Z,N,H,C};
 }
 
-//////////////////////////////////////////////////////
 // 履歴
-//////////////////////////////////////////////////////
 let hist=[];
 function addHist(t){
 hist.push(t);
@@ -185,59 +120,40 @@ function copyHistory(){
 navigator.clipboard.writeText(hist.join("\n"));
 }
 
-//////////////////////////////////////////////////////
 // 計算
-//////////////////////////////////////////////////////
 function add(){
 let a=parseInt(hex1.value,16)||0;
 let b=parseInt(hex2.value,16)||0;
-
 let r=a+b;
 let w=r&0xFF;
 
-let f=setFlags(
-w==0,
-0,
-((a&0xF)+(b&0xF)>0xF),
-r>0xFF
-);
+let f=setFlags(w==0,0,((a&0xF)+(b&0xF)>0xF),r>0xFF);
 
 hexResult.textContent=w.toString(16).toUpperCase();
-addHist(`${hex1.value}+${hex2.value}=${w.toString(16)} Z:${f.Z} N:${f.N} H:${f.H} C:${f.C}`);
+addHist(`${hex1.value}+${hex2.value}=${w.toString(16)}`);
 }
 
 function sub(){
 let a=parseInt(hex1.value,16)||0;
 let b=parseInt(hex2.value,16)||0;
-
 let r=a-b;
 let w=r&0xFF;
 
-let f=setFlags(
-w==0,
-1,
-(a&0xF)<(b&0xF),
-a<b
-);
+let f=setFlags(w==0,1,(a&0xF)<(b&0xF),a<b);
 
 hexResult.textContent=w.toString(16).toUpperCase();
-addHist(`${hex1.value}-${hex2.value}=${w.toString(16)} Z:${f.Z} N:${f.N} H:${f.H} C:${f.C}`);
+addHist(`${hex1.value}-${hex2.value}=${w.toString(16)}`);
 }
 
-//////////////////////////////////////////////////////
 // 進数変換
-//////////////////////////////////////////////////////
 function convert(){
 let v=parseInt(num.value,parseInt(base.value))||0;
-
 out10.textContent="10:"+v;
 out16.textContent="16:"+v.toString(16).toUpperCase();
 out2.textContent="2:"+v.toString(2);
 }
 
-//////////////////////////////////////////////////////
 // 論理演算
-//////////////////////////////////////////////////////
 function andOp(){
 logicOut.textContent=(parseInt(l1.value,16)&parseInt(l2.value,16)).toString(16);
 }
@@ -248,9 +164,7 @@ function xorOp(){
 logicOut.textContent=(parseInt(l1.value,16)^parseInt(l2.value,16)).toString(16);
 }
 
-//////////////////////////////////////////////////////
-// 文字テーブル（完全修正版）
-//////////////////////////////////////////////////////
+// 文字テーブル（そのまま）
 const table={
 "00":"-","01":"イ゛","02":"ウ゛","03":"エ゛","04":"オ゛",
 
@@ -343,263 +257,34 @@ const table={
 "F6":"0","F7":"1","F8":"2","F9":"3",
 "FA":"4","FB":"5","FC":"6","FD":"7","FE":"8","FF":"9"
 };
-
-//////////////////////////////////////////////////////
-// reverse（安全版）
-//////////////////////////////////////////////////////
+// reverse
 const rev={};
-
 for(let k in table){
 let v=table[k];
 if(v.startsWith("[") || v=="\n") continue;
 rev[v]=k;
 }
 
-//////////////////////////////////////////////////////
 // HEX→文字
-//////////////////////////////////////////////////////
 function hexToText(){
 let c=hexText.value.replace(/[^0-9A-F]/gi,"");
 let r="";
-
 for(let i=0;i<c.length;i+=2){
 let h=c.substr(i,2).toUpperCase();
 r+=table[h]||"?";
 }
-
 textOut.textContent=r;
 }
 
-//////////////////////////////////////////////////////
-// 文字→HEX（5区切り+50）
-//////////////////////////////////////////////////////
+// 文字→HEX
 function textToHex(){
-
 let t=text.value;
-
 let out=[];
-let buf=[];
-
 for(let i=0;i<t.length;i++){
-
-let ch=t[i];
-
-// ①〜⑳は完全削除
-if(/[①-⑳]/.test(ch)) continue;
-
-// 濁点結合
-if(t[i+1]==="゛"){
-ch = ch + "゛";
-i++;
+let c=rev[t[i]]||"50";
+out.push(c);
 }
-
-// 半濁点結合
-if(t[i+1]==="゜"){
-ch = ch + "゜";
-i++;
-}
-
-let c=rev[ch];
-
-if(!c){
-console.warn("未定義:",ch);
-c="50";
-}
-
-buf.push(c);
-
-// ★ここ重要：5文字ごとに確定
-if(buf.length===5){
-out.push(...buf);
-buf=[];
-}
-}
-
-// ★最後だけ1回埋める（ここ超重要）
-if(buf.length>0){
-while(buf.length<5)buf.push("50");
-out.push(...buf);
-}
-
 hexOut.textContent=out.join(" ");
-}
-
-//////////////////////////////////////////////////////
-// 逆アセンブル（簡易）
-//////////////////////////////////////////////////////
-function normalizeHex(hex){
-hex = hex.replace(/[^0-9A-F]/gi,"").toUpperCase();
-let out="";
-for(let i=0;i<hex.length;i+=2){
-let b = hex.substr(i,2);
-if(b.length<2) b = "00";
-out += b;
-}
-return out;
-}
-
-function read16(hex, i){
-return parseInt(hex.substr(i+2,2) + hex.substr(i,2),16);
-}
-
-function disasm(){
-
-let hex = normalizeHex(asm.value);
-let base = parseInt(start.value,16)||0;
-
-let i=0;
-let addr=base;
-
-let out="";
-
-let labels={};
-let labelId=0;
-
-function label(a){
-if(!labels[a]) labels[a]="L"+(labelId++);
-return labels[a];
-}
-
-
-// =====================
-// CB命令（簡易完全展開）
-// =====================
-const cbMap = {};
-const ops = ["B","C","D","E","H","L","(HL)","A"];
-const rot = ["RLC","RRC","RL","RR","SLA","SRA","SWAP","SRL"];
-
-let idx=0;
-for(let r=0;r<8;r++){
-for(let b=0;b<8;b++){
-let code = (r*8+b).toString(16).padStart(2,"0").toUpperCase();
-cbMap[code] = rot[r]+" "+ops[b];
-}
-}
-
-// =====================
-// メイン
-// =====================
-while(i < hex.length){
-
-let op = hex.substr(i,2);
-let line="";
-let size=1;
-
-// ---------------------
-// CBプレフィックス
-// ---------------------
-if(op==="CB"){
-let sub = hex.substr(i+2,2);
-let info = cbTable[sub];
-
-if(info){
-line = info.mnemonic;
-size = 2;
-}else{
-line = "CB $" + sub;
-size = 2;
-}
-}
-// ---------------------
-// 即値ロード系
-// ---------------------
-else if(op==="3E"){ line="LD A,$"+hex.substr(i+2,2); size=2; }
-else if(op==="06"){ line="LD B,$"+hex.substr(i+2,2); size=2; }
-else if(op==="0E"){ line="LD C,$"+hex.substr(i+2,2); size=2; }
-else if(op==="16"){ line="LD D,$"+hex.substr(i+2,2); size=2; }
-else if(op==="1E"){ line="LD E,$"+hex.substr(i+2,2); size=2; }
-else if(op==="26"){ line="LD H,$"+hex.substr(i+2,2); size=2; }
-else if(op==="2E"){ line="LD L,$"+hex.substr(i+2,2); size=2; }
-
-// ---------------------
-// 16bitロード
-// ---------------------
-else if(op==="21"){
-line="LD HL,$"+hex.substr(i+4,2)+hex.substr(i+2,2);
-size=3;
-}
-
-// ---------------------
-// メモリロード
-// ---------------------
-else if(op==="FA"){
-line="LD A,($"+hex.substr(i+4,2)+hex.substr(i+2,2)+")";
-size=3;
-}
-else if(op==="EA"){
-line="LD ($"+hex.substr(i+4,2)+hex.substr(i+2,2)+"),A";
-size=3;
-}
-
-// ---------------------
-// JP / CALL
-// ---------------------
-else if(op==="C3"){
-let a=read16(hex,i);
-line="JP "+label(a);
-size=3;
-}
-else if(op==="CD"){
-let a=read16(hex,i);
-line="CALL "+label(a);
-size=3;
-}
-else if(op==="C9"){ line="RET"; }
-
-// ---------------------
-// JR（相対ジャンプ）
-//----------------------
-else if(op==="18"){
-let off=parseInt(hex.substr(i+2,2),16);
-if(off>=0x80) off-=0x100;
-let t=addr+2+off;
-line="JR "+label(t);
-size=2;
-}
-
-// ---------------------
-// INC/DEC（最低限全部潰す）
-// ---------------------
-else if(op==="3C") line="INC A";
-else if(op==="04") line="INC B";
-else if(op==="0C") line="INC C";
-else if(op==="14") line="INC D";
-else if(op==="1C") line="INC E";
-else if(op==="24") line="INC H";
-else if(op==="2C") line="INC L";
-
-else if(op==="3D") line="DEC A";
-else if(op==="05") line="DEC B";
-else if(op==="0D") line="DEC C";
-else if(op==="15") line="DEC D";
-else if(op==="1D") line="DEC E";
-else if(op==="25") line="DEC H";
-else if(op==="2D") line="DEC L";
-
-// ---------------------
-// 未定義ゼロ化（重要）
-// ---------------------
-else {
-line="NOP ; unknown("+op+")";
-}
-
-// ---------------------
-out += addr.toString(16).toUpperCase().padStart(4,"0")
-+": "+op+"  "+line+"\n";
-
-i += size*2;
-addr += size;
-}
-
-// ---------------------
-// ラベル出力
-// ---------------------
-out += "\n; LABELS\n";
-for(let k in labels){
-out += labels[k]+" = $"+k.toString(16).toUpperCase()+"\n";
-}
-
-asmOut.textContent = out;
 }
 
 </script>
