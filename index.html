@@ -418,18 +418,20 @@ while(i<bytes.length){
   let text = def.m;
 
   if(def.s===2){
-    let d=inst[1];
+  let d=inst[1];
 
-    if(text.includes("r8")){
-      let offset = (d<<24)>>24;
-      let target = pc + 2 + offset;
-      text = text.replace("r8", labelNames[target]||hex(target,4));
-    }else{
-      text = text.replace("d8",hex(d,2))
-                 .replace("a8",hex(d,2));
-    }
+  if(text.includes("r8")){
+    let offset = d < 0x80 ? d : d - 0x100; // ←こっちの方が安定
+    let target = (pc + 2 + offset) & 0xFFFF;
+
+    let label = labelNames[target] || hex(target,4);
+    text = text.replace("r8", label);
+
+  }else{
+    text = text.replace("d8",hex(d,2))
+               .replace("a8",hex(d,2));
   }
-
+}
   if(def.s===3){
     let lo=inst[1];
     let hi=inst[2];
