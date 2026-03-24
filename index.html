@@ -401,7 +401,6 @@ let op=hex.substr(i,2);
 let line="";
 let size=1;
 
-// ---- 判定 ----
 switch(op){
 
 case "C9":
@@ -447,8 +446,8 @@ addr+=size;
 }
 
 asmOut.textContent=out;
-}}
-
+}
+  
 function normalizeHex(hex){
 hex = hex.replace(/[^0-9A-F]/gi,"").toUpperCase();
 let out="";
