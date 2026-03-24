@@ -388,34 +388,66 @@ hexOut.textContent=out.join(" ");
 // 逆アセンブル（簡易）
 //////////////////////////////////////////////////////
 function disasm(){
-
-let b=asm.value.replace(/[^0-9A-F]/gi,"");
+let hex=asm.value.replace(/[^0-9A-F]/gi,"").toUpperCase();
 let addr=parseInt(start.value,16)||0;
 
-let i=0,res="";
+let i=0;
+let out="";
 
-while(i<b.length){
+while(i<hex.length){
 
-let op=b.substr(i,2);
-let line="???";
+let op=hex.substr(i,2);
+let line="";
 let size=1;
 
-if(op=="3E"){line="ld a,"+b.substr(i+2,2);size=2;}
-else if(op=="06"){line="ld b,"+b.substr(i+2,2);size=2;}
-else if(op=="C3"){line="jp "+b.substr(i+4,2)+b.substr(i+2,2);size=3;}
-else if(op=="CD"){line="call";size=3;}
-else if(op=="C9"){line="ret";size=1;}
-else if(op=="18"){line="jr";size=2;}
+// --- 1byte ---
+if(op==="C9"){
+line="RET";
+}
 
-res+=addr.toString(16).padStart(4,"0")+": "+op+" "+line+"\n";
+// --- 2byte ---
+else if(op==="3E"){
+line="LD A,$"+hex.substr(i+2,2);
+size=2;
+}
+else if(op==="06"){
+line="LD B,$"+hex.substr(i+2,2);
+size=2;
+}
+else if(op==="0E"){
+line="LD C,$"+hex.substr(i+2,2);
+size=2;
+}
+
+// --- 3byte ---
+else if(op==="C3"){
+let lo=hex.substr(i+2,2);
+let hi=hex.substr(i+4,2);
+line="JP $"+hi+lo;
+size=3;
+}
+else if(op==="CD"){
+let lo=hex.substr(i+2,2);
+let hi=hex.substr(i+4,2);
+line="CALL $"+hi+lo;
+size=3;
+}
+
+// --- unknown ---
+else{
+line="DB $"+op;
+size=1;
+}
+
+out+=addr.toString(16).toUpperCase().padStart(4,"0")
++": "+op+"  "+line+"\n";
 
 i+=size*2;
 addr+=size;
 }
 
-asmOut.textContent=res;
+asmOut.textContent=out;
 }
-
 </script>
 
 </body>
