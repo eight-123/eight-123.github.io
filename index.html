@@ -382,9 +382,9 @@ while(i<bytes.length){
 let labelNames={};
 let id=0;
 for(let addr in labels){
-  labelNames[addr]="L"+hex(id++,4);
+  let a = parseInt(addr);
+  labelNames[a] = "L" + hex(a,4);
 }
-
 // ===== 2パス目 =====
 pc=start;
 i=0;
