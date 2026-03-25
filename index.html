@@ -213,7 +213,7 @@ for(let i=0;i<t.length;i++){
   // ===== 改行 =====
   if(t[i] === "\n"){
 
-  // 5文字未満のときだけ埋める
+  // 5文字未満だけ埋める
   if(count > 0){
     while(count < 5){
       out.push("50");
@@ -221,8 +221,11 @@ for(let i=0;i<t.length;i++){
     }
   }
 
-  // 改行
-  out.push("50");
+  // ★ここが重要
+  if(out[out.length-1] !== "50"){
+    out.push("50");
+  }
+
   count = 0;
   continue;
 }
