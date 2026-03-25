@@ -318,12 +318,12 @@ while(i<bytes.length){
   let op=bytes[i];
 
   if(op===0x18||op===0x20||op===0x28){
-    let offset = (bytes[i+1]<<24)>>24;
-    let target = pc + 2 + offset;
-    labels[target]=true;
-    i+=2; pc+=2;
-    continue;
-  }
+  let offset = bytes[i+1] < 0x80 ? bytes[i+1] : bytes[i+1] - 0x100;
+  let target = pc + 2 + offset;
+  labels[target]=true;
+  i+=2; pc+=2;
+  continue;
+}
 
   if(op===0xC3||op===0xCD){
     let lo=bytes[i+1];
@@ -352,63 +352,74 @@ pc=start;
 i=0;
 let out=[];
 
-while(i<bytes.length){
+while(i < bytes.length){
 
+  let line = "";
+
+  let op = bytes[i];
+  let def = OPC[op];
+
+  // サイズ確定（安全版）
+  let size = def ? def.s : 1;
+
+  // ラベル
   if(labelNames[pc]){
-    out.push(labelNames[pc]+":");
+    line += labelNames[pc] + ": ";
   }
 
-  let op=bytes[i];
-  let def = OPC[op];
-  if(op===0xCB){
-    let cb=bytes[i+1];
-    let name = CB[cb]||"???";
-    out.push(`${hex(pc,4)}: CB ${hex(cb,2)}  ${name}`);
-    i+=2; pc+=2;
+  if(op === 0xCB){
+    let cb = bytes[i+1];
+    let name = CB[cb] || "???";
+
+    out.push(line + `${hex(pc,4)}: CB ${hex(cb,2)}  ${name}`);
+
+    i += 2;
+    pc += 2;
     continue;
   }
-
-  
- 
 
   if(!def){
-    out.push(`${hex(pc,4)}: ${hex(op,2)}  ???`);
-    i+=1; pc+=1;
+    out.push(line + `${hex(pc,4)}: ${hex(op,2)}  ???`);
+    i += 1;
+    pc += 1;
     continue;
   }
 
-  let inst = bytes.slice(i,i+def.s);
+  let inst = bytes.slice(i, i + size);
   let text = def.m;
 
-  if(def.s===2){
-  let d=inst[1];
+  if(size === 2){
+    let d = inst[1];
 
-  if(text.includes("r8")){
-    let offset = d < 0x80 ? d : d - 0x100; // ←こっちの方が安定
-    let target = (pc + 2 + offset) & 0xFFFF;
-
-    let label = labelNames[target] || hex(target,4);
-    text = text.replace("r8", label);
-
-  }else{
-    text = text.replace("d8",hex(d,2))
-               .replace("a8",hex(d,2));
-  }
-}
-  if(def.s===3){
-    let lo=inst[1];
-    let hi=inst[2];
-    let addr=(hi<<8)|lo;
-    text = text.replace("a16",labelNames[addr]||hex(addr,4));
+    if(text.includes("r8")){
+      let offset = d < 0x80 ? d : d - 0x100;
+      let target = (pc + 2 + offset) & 0xFFFF;
+      let label = labelNames[target] || hex(target,4);
+      text = text.replace("r8", label);
+    } else {
+      text = text.replace("d8", hex(d,2))
+                 .replace("a8", hex(d,2));
+    }
   }
 
-  out.push(`${hex(pc,4)}: ${inst.map(b=>hex(b,2)).join(" ")}  ${text}`);
+  if(size === 3){
+    let lo = inst[1];
+    let hi = inst[2];
+    let addr = (hi << 8) | lo;
 
-  i+=def.s;
-  pc+=def.s;
+    text = text.replace("a16", labelNames[addr] || hex(addr,4));
+  }
+
+  out.push(
+    line +
+    `${hex(pc,4)}: ${inst.map(b=>hex(b,2)).join(" ")}  ${text}`
+  );
+
+   i += size;
+  pc += size;
 }
 
-disOut.textContent=out.join("\n");
+disOut.textContent = out.join("\n");
 }
 </script>
 
