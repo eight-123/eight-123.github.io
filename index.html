@@ -203,13 +203,64 @@ textOut.textContent = r;
 }
 // 文字→HEX
 function textToHex(){
-let t=text.value;
-let out=[];
+let t = text.value;
+let out = [];
+
+let count = 0;
+
 for(let i=0;i<t.length;i++){
-let c=rev[t[i]]||"50";
-out.push(c);
+
+  // ===== 改行 =====
+  if(t[i] === "\n"){
+
+    while(count < 5){
+      out.push("50");
+      count++;
+    }
+
+    out.push("50");
+    count = 0;
+    continue;
+  }
+
+  let found = false;
+
+  for(let k in table){
+    let v = table[k];
+    if(!v) continue;
+
+    if(t.startsWith(v, i)){
+      out.push(k);
+      i += v.length - 1;
+      count++;
+      found = true;
+      break;
+    }
+  }
+
+  // ===== 未定義文字 =====
+  if(!found){
+    out.push(t[i]);   // ←そのまま出す
+    continue;         // ←カウントしない
+  }
+
+  // ===== 5文字 =====
+  if(count === 5){
+    out.push("50");
+    count = 0;
+  }
 }
-hexOut.textContent=out.join(" ");
+
+// ===== 最後の行 =====
+if(count > 0){
+  while(count < 5){
+    out.push("50");
+    count++;
+  }
+  out.push("50");
+}
+
+hexOut.textContent = out.join(" ");
 }
 // ===== 逆アセンブル用 =====
 
