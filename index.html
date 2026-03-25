@@ -168,10 +168,11 @@ addHist(`${hex1.value}-${hex2.value}=${w.toString(16)}`);
 
 // 進数変換
 function convert(){
-let v=parseInt(num.value,parseInt(base.value))||0;
-out10.textContent="10:"+v;
-out16.textContent="16:"+v.toString(16).toUpperCase();
-out2.textContent="2:"+v.toString(2);
+  let v=parseInt(document.getElementById("num").value, parseInt(document.getElementById("base").value))||0;
+
+  document.getElementById("out10").textContent="10:"+v;
+  document.getElementById("out16").textContent="16:"+v.toString(16).toUpperCase();
+  document.getElementById("out2").textContent="2:"+v.toString(2);
 }
 
 // 論理演算
@@ -205,7 +206,7 @@ function hexToText(){
   for(let h of arr){
     h = h.toUpperCase();
 
-    if(table[h]){
+    if(Object.prototype.hasOwnProperty.call(table, h)){
       r += table[h];
     } else {
       if(mode === "keep"){
@@ -334,6 +335,11 @@ while(i<bytes.length){
     continue;
   }
 
+ if(!Number.isFinite(op)){
+  i++;
+  pc++;
+  continue;
+}
   let def = OPC[op];
   let size=def?def.s:1;
   i+=size;
@@ -354,7 +360,7 @@ let out=[];
 
 while(i < bytes.length){
 
-  let line = "";
+
 
   let op = bytes[i];
   let def = OPC[op];
@@ -362,16 +368,13 @@ while(i < bytes.length){
   // サイズ確定（安全版）
   let size = def ? def.s : 1;
 
-  // ラベル
-  if(labelNames[pc]){
-    line += labelNames[pc] + ": ";
-  }
+ 
 
   if(op === 0xCB){
     let cb = bytes[i+1];
     let name = CB[cb] || "???";
 
-    out.push(line + `${hex(pc,4)}: CB ${hex(cb,2)}  ${name}`);
+   out.push(`${hex(pc,4)}: CB ${hex(cb,2)}  ${name}`);
 
     i += 2;
     pc += 2;
@@ -379,7 +382,7 @@ while(i < bytes.length){
   }
 
   if(!def){
-    out.push(line + `${hex(pc,4)}: ${hex(op,2)}  ???`);
+    out.push(`${hex(pc,4)}: ${hex(op,2)}  ???`);
     i += 1;
     pc += 1;
     continue;
@@ -411,9 +414,8 @@ while(i < bytes.length){
   }
 
   out.push(
-    line +
-    `${hex(pc,4)}: ${inst.map(b=>hex(b,2)).join(" ")}  ${text}`
-  );
+  `${hex(pc,4)}: ${inst.map(b=>hex(b,2)).join(" ")}  ${text}`
+);
 
    i += size;
   pc += size;
