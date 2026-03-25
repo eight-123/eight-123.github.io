@@ -196,7 +196,7 @@ let arr = hexText.value.trim().split(/\s+/);
 let r="";
 for(let h of arr){
   h = h.toUpperCase();
-  r += table[h] || "?";
+  r += table[h] || h;
 }
 
 textOut.textContent = r;
