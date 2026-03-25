@@ -155,7 +155,7 @@ window.OPCODES = {
   0x7C:{m:"ld a,h",s:1},
   0x7D:{m:"ld a,l",s:1},
   0x7E:{m:"ld a,(hl)",s:1},
-  0x7F:{m:"ld a,a",s:1}
+  0x7F:{m:"ld a,a",s:1},
 
   // =========================
   // add a,r
@@ -251,7 +251,7 @@ window.OPCODES = {
   0xBC:{m:"cp h",s:1},
   0xBD:{m:"cp l",s:1},
   0xBE:{m:"cp (hl)",s:1},
-  0xBF:{m:"cp a",s:1}
+  0xBF:{m:"cp a",s:1},
 
   0xC0:{m:"ret nz",s:1},
   0xC1:{m:"pop bc",s:1},
