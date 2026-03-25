@@ -1,11 +1,15 @@
-window. OPCODES = {
-  0x00:{m:"NOP",s:1},
+
+window.OPCODES = {
+
+  0x00:{m:"nop",s:1},
+  0x01:{m:"ld bc,a16",s:3},
   0x02:{m:"ld (bc),a",s:1},
   0x03:{m:"inc bc",s:1},
   0x04:{m:"inc b",s:1},
   0x05:{m:"dec b",s:1},
-  0x06:{m:"ld b,d8"s:2},
-  0x07:{m:"rlca"s:1},
+  0x06:{m:"ld b,d8",s:2},
+  0x07:{m:"rlca",s:1},
+
   0x08:{m:"ld (a16),sp",s:3},
   0x09:{m:"add hl,bc",s:1},
   0x0A:{m:"ld a,(bc)",s:1},
@@ -13,27 +17,312 @@ window. OPCODES = {
   0x0C:{m:"inc c",s:1},
   0x0D:{m:"dec c",s:1},
   0x0E:{m:"ld c,d8",s:2},
+  0x0F:{m:"rrca",s:1},
+
+  0x10:{m:"stop",s:2},
+  0x11:{m:"ld de,a16",s:3},
+  0x12:{m:"ld (de),a",s:1},
+  0x13:{m:"inc de",s:1},
+  0x14:{m:"inc d",s:1},
+  0x15:{m:"dec d",s:1},
+  0x16:{m:"ld d,d8",s:2},
+  0x17:{m:"rla",s:1},
+
+  0x18:{m:"jr r8",s:2},
+  0x19:{m:"add hl,de",s:1},
+  0x1A:{m:"ld a,(de)",s:1},
+  0x1B:{m:"dec de",s:1},
+  0x1C:{m:"inc e",s:1},
+  0x1D:{m:"dec e",s:1},
+  0x1E:{m:"ld e,d8",s:2},
+  0x1F:{m:"rra",s:1},
+
+  0x20:{m:"jr nz,r8",s:2},
+  0x21:{m:"ld hl,a16",s:3},
+  0x22:{m:"ld (hl+),a",s:1},
+  0x23:{m:"inc hl",s:1},
+  0x24:{m:"inc h",s:1},
+  0x25:{m:"dec h",s:1},
+  0x26:{m:"ld h,d8",s:2},
+  0x27:{m:"daa",s:1},
+
+  0x28:{m:"jr z,r8",s:2},
+  0x29:{m:"add hl,hl",s:1},
+  0x2A:{m:"ld a,(hl+)",s:1},
+  0x2B:{m:"dec hl",s:1},
+  0x2C:{m:"inc l",s:1},
+  0x2D:{m:"dec l",s:1},
+  0x2E:{m:"ld l,d8",s:2},
+  0x2F:{m:"cpl",s:1},
+
+  0x30:{m:"jr nc,r8",s:2},
+  0x31:{m:"ld sp,a16",s:3},
+  0x32:{m:"ld (hl-),a",s:1},
+  0x33:{m:"inc sp",s:1},
+  0x34:{m:"inc (hl)",s:1},
+  0x35:{m:"dec (hl)",s:1},
+  0x36:{m:"ld (hl),d8",s:2},
+  0x37:{m:"scf",s:1},
+
+  0x38:{m:"jr c,r8",s:2},
+  0x39:{m:"add hl,sp",s:1},
+  0x3A:{m:"ld a,(hl-)",s:1},
+  0x3B:{m:"dec sp",s:1},
+  0x3C:{m:"inc a",s:1},
+  0x3D:{m:"dec a",s:1},
+  0x3E:{m:"ld a,d8",s:2},
+  0x3F:{m:"ccf",s:1}
   
+  // =========================
+  // 0x40 - 0x4F (ld b,?)
+  // =========================
+  0x40:{m:"ld b,b",s:1},
+  0x41:{m:"ld b,c",s:1},
+  0x42:{m:"ld b,d",s:1},
+  0x43:{m:"ld b,e",s:1},
+  0x44:{m:"ld b,h",s:1},
+  0x45:{m:"ld b,l",s:1},
+  0x46:{m:"ld b,(hl)",s:1},
+  0x47:{m:"ld b,a",s:1},
 
-  0x3E:{m:"ld A,d8",s:2},
-  0x06:{m:"ld B,d8",s:2},
-  0x0E:{m:"ld C,d8",s:2}, 
-  0x26:{m:"ld H,d8",s:2},
-  0x2E:{m:"ld I,d8",s:2},
+  0x48:{m:"ld c,b",s:1},
+  0x49:{m:"ld c,c",s:1},
+  0x4A:{m:"ld c,d",s:1},
+  0x4B:{m:"ld c,e",s:1},
+  0x4C:{m:"ld c,h",s:1},
+  0x4D:{m:"ld c,l",s:1},
+  0x4E:{m:"ld c,(hl)",s:1},
+  0x4F:{m:"ld c,a",s:1},
 
-  0xAF:{m:"XOR A",s:1},
+  // =========================
+  // 0x50 - 0x5F (ld d,?)
+  // =========================
+  0x50:{m:"ld d,b",s:1},
+  0x51:{m:"ld d,c",s:1},
+  0x52:{m:"ld d,d",s:1},
+  0x53:{m:"ld d,e",s:1},
+  0x54:{m:"ld d,h",s:1},
+  0x55:{m:"ld d,l",s:1},
+  0x56:{m:"ld d,(hl)",s:1},
+  0x57:{m:"ld d,a",s:1},
 
-  0x32:{m:"ldd (HL),A",s:1},
-  0x01:{m:"ld bc,a16",s:3},
-  0xCD:{m:"CALL a16",s:3},
-  0xC3:{m:"JP a16",s:3},
+  0x58:{m:"ld e,b",s:1},
+  0x59:{m:"ld e,c",s:1},
+  0x5A:{m:"ld e,d",s:1},
+  0x5B:{m:"ld e,e",s:1},
+  0x5C:{m:"ld e,h",s:1},
+  0x5D:{m:"ld e,l",s:1},
+  0x5E:{m:"ld e,(hl)",s:1},
+  0x5F:{m:"ld e,a",s:1},
 
-  0x18:{m:"JR r8",s:2},
-  0x20:{m:"JR NZ,r8",s:2},
-  0x28:{m:"JR Z,r8",s:2},
+  // =========================
+  // 0x60 - 0x6F (ld h,?)
+  // =========================
+  0x60:{m:"ld h,b",s:1},
+  0x61:{m:"ld h,c",s:1},
+  0x62:{m:"ld h,d",s:1},
+  0x63:{m:"ld h,e",s:1},
+  0x64:{m:"ld h,h",s:1},
+  0x65:{m:"ld h,l",s:1},
+  0x66:{m:"ld h,(hl)",s:1},
+  0x67:{m:"ld h,a",s:1},
 
-  0xE0:{m:"ld (FFa8),a",s:2},
-  0xF0:{m:"ld A,(FFa8)",s:2},
+  0x68:{m:"ld l,b",s:1},
+  0x69:{m:"ld l,c",s:1},
+  0x6A:{m:"ld l,d",s:1},
+  0x6B:{m:"ld l,e",s:1},
+  0x6C:{m:"ld l,h",s:1},
+  0x6D:{m:"ld l,l",s:1},
+  0x6E:{m:"ld l,(hl)",s:1},
+  0x6F:{m:"ld l,a",s:1},
 
-  0xCB:{m:"PREFIX CB",s:1}
+  // =========================
+  // 0x70 - 0x7F (ld (hl),? + halt)
+  // =========================
+  0x70:{m:"ld (hl),b",s:1},
+  0x71:{m:"ld (hl),c",s:1},
+  0x72:{m:"ld (hl),d",s:1},
+  0x73:{m:"ld (hl),e",s:1},
+  0x74:{m:"ld (hl),h",s:1},
+  0x75:{m:"ld (hl),l",s:1},
+  0x76:{m:"halt",s:1},
+  0x77:{m:"ld (hl),a",s:1},
+
+  0x78:{m:"ld a,b",s:1},
+  0x79:{m:"ld a,c",s:1},
+  0x7A:{m:"ld a,d",s:1},
+  0x7B:{m:"ld a,e",s:1},
+  0x7C:{m:"ld a,h",s:1},
+  0x7D:{m:"ld a,l",s:1},
+  0x7E:{m:"ld a,(hl)",s:1},
+  0x7F:{m:"ld a,a",s:1}
+
+  // =========================
+  // add a,r
+  // =========================
+  0x80:{m:"add a,b",s:1},
+  0x81:{m:"add a,c",s:1},
+  0x82:{m:"add a,d",s:1},
+  0x83:{m:"add a,e",s:1},
+  0x84:{m:"add a,h",s:1},
+  0x85:{m:"add a,l",s:1},
+  0x86:{m:"add a,(hl)",s:1},
+  0x87:{m:"add a,a",s:1},
+
+  // =========================
+  // adc a,r
+  // =========================
+  0x88:{m:"adc a,b",s:1},
+  0x89:{m:"adc a,c",s:1},
+  0x8A:{m:"adc a,d",s:1},
+  0x8B:{m:"adc a,e",s:1},
+  0x8C:{m:"adc a,h",s:1},
+  0x8D:{m:"adc a,l",s:1},
+  0x8E:{m:"adc a,(hl)",s:1},
+  0x8F:{m:"adc a,a",s:1},
+
+  // =========================
+  // sub a,r
+  // =========================
+  0x90:{m:"sub a,b",s:1},
+  0x91:{m:"sub a,c",s:1},
+  0x92:{m:"sub a,d",s:1},
+  0x93:{m:"sub a,e",s:1},
+  0x94:{m:"sub a,h",s:1},
+  0x95:{m:"sub a,l",s:1},
+  0x96:{m:"sub a,(hl)",s:1},
+  0x97:{m:"sub a,a",s:1},
+
+  // =========================
+  // sbc a,r
+  // =========================
+  0x98:{m:"sbc a,b",s:1},
+  0x99:{m:"sbc a,c",s:1},
+  0x9A:{m:"sbc a,d",s:1},
+  0x9B:{m:"sbc a,e",s:1},
+  0x9C:{m:"sbc a,h",s:1},
+  0x9D:{m:"sbc a,l",s:1},
+  0x9E:{m:"sbc a,(hl)",s:1},
+  0x9F:{m:"sbc a,a",s:1},
+
+  // =========================
+  // and
+  // =========================
+  0xA0:{m:"and b",s:1},
+  0xA1:{m:"and c",s:1},
+  0xA2:{m:"and d",s:1},
+  0xA3:{m:"and e",s:1},
+  0xA4:{m:"and h",s:1},
+  0xA5:{m:"and l",s:1},
+  0xA6:{m:"and (hl)",s:1},
+  0xA7:{m:"and a",s:1},
+
+  // =========================
+  // xor
+  // =========================
+  0xA8:{m:"xor b",s:1},
+  0xA9:{m:"xor c",s:1},
+  0xAA:{m:"xor d",s:1},
+  0xAB:{m:"xor e",s:1},
+  0xAC:{m:"xor h",s:1},
+  0xAD:{m:"xor l",s:1},
+  0xAE:{m:"xor (hl)",s:1},
+  0xAF:{m:"xor a",s:1},
+
+  // =========================
+  // or
+  // =========================
+  0xB0:{m:"or b",s:1},
+  0xB1:{m:"or c",s:1},
+  0xB2:{m:"or d",s:1},
+  0xB3:{m:"or e",s:1},
+  0xB4:{m:"or h",s:1},
+  0xB5:{m:"or l",s:1},
+  0xB6:{m:"or (hl)",s:1},
+  0xB7:{m:"or a",s:1},
+
+  // =========================
+  // cp (compare)
+  // =========================
+  0xB8:{m:"cp b",s:1},
+  0xB9:{m:"cp c",s:1},
+  0xBA:{m:"cp d",s:1},
+  0xBB:{m:"cp e",s:1},
+  0xBC:{m:"cp h",s:1},
+  0xBD:{m:"cp l",s:1},
+  0xBE:{m:"cp (hl)",s:1},
+  0xBF:{m:"cp a",s:1}
+
+  0xC0:{m:"ret nz",s:1},
+  0xC1:{m:"pop bc",s:1},
+  0xC2:{m:"jp nz,a16",s:3},
+  0xC3:{m:"jp a16",s:3},
+  0xC4:{m:"call nz,a16",s:3},
+  0xC5:{m:"push bc",s:1},
+  0xC6:{m:"add a,d8",s:2},
+  0xC7:{m:"rst 00h",s:1},
+
+  0xC8:{m:"ret z",s:1},
+  0xC9:{m:"ret",s:1},
+  0xCA:{m:"jp z,a16",s:3},
+  0xCB:{m:"prefix cb",s:1},
+  0xCC:{m:"call z,a16",s:3},
+  0xCD:{m:"call a16",s:3},
+  0xCE:{m:"adc a,d8",s:2},
+  0xCF:{m:"rst 08h",s:1},
+
+  0xD0:{m:"ret nc",s:1},
+  0xD1:{m:"pop de",s:1},
+  0xD2:{m:"jp nc,a16",s:3},
+  0xD3:{m:"illegal",s:1},
+  0xD4:{m:"call nc,a16",s:3},
+  0xD5:{m:"push de",s:1},
+  0xD6:{m:"sub a,d8",s:2},
+  0xD7:{m:"rst 10h",s:1},
+
+  0xD8:{m:"ret c",s:1},
+  0xD9:{m:"reti",s:1},
+  0xDA:{m:"jp c,a16",s:3},
+  0xDB:{m:"illegal",s:1},
+  0xDC:{m:"call c,a16",s:3},
+  0xDD:{m:"illegal",s:1},
+  0xDE:{m:"sbc a,d8",s:2},
+  0xDF:{m:"rst 18h",s:1},
+
+  0xE0:{m:"ld (ff00+a8),a",s:2},
+  0xE1:{m:"pop hl",s:1},
+  0xE2:{m:"ld (ff00+c),a",s:1},
+  0xE3:{m:"illegal",s:1},
+  0xE4:{m:"illegal",s:1},
+  0xE5:{m:"push hl",s:1},
+  0xE6:{m:"and d8",s:2},
+  0xE7:{m:"rst 20h",s:1},
+
+  0xE8:{m:"add sp,r8",s:2},
+  0xE9:{m:"jp hl",s:1},
+  0xEA:{m:"ld (a16),a",s:3},
+  0xEB:{m:"illegal",s:1},
+  0xEC:{m:"illegal",s:1},
+  0xED:{m:"illegal",s:1},
+  0xEE:{m:"xor d8",s:2},
+  0xEF:{m:"rst 28h",s:1},
+
+  0xF0:{m:"ld a,(ff00+a8)",s:2},
+  0xF1:{m:"pop af",s:1},
+  0xF2:{m:"ld a,(ff00+c)",s:1},
+  0xF3:{m:"di",s:1},
+  0xF4:{m:"illegal",s:1},
+  0xF5:{m:"push af",s:1},
+  0xF6:{m:"or d8",s:2},
+  0xF7:{m:"rst 30h",s:1},
+
+  0xF8:{m:"ld hl,sp+r8",s:2},
+  0xF9:{m:"ld sp,hl",s:1},
+  0xFA:{m:"ld a,(a16)",s:3},
+  0xFB:{m:"ei",s:1},
+  0xFC:{m:"illegal",s:1},
+  0xFD:{m:"illegal",s:1},
+  0xFE:{m:"cp d8",s:2},
+  0xFF:{m:"rst 38h",s:1}
+
 };
