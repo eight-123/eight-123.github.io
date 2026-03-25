@@ -204,6 +204,7 @@ textOut.textContent = r;
 // 文字→HEX
 function textToHex(){
 let t = text.value;
+  t = t.replaceAll("終", "");
 let out = [];
 
 let count = 0;
