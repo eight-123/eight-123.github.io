@@ -213,15 +213,19 @@ for(let i=0;i<t.length;i++){
   // ===== 改行 =====
   if(t[i] === "\n"){
 
+  // 5文字未満のときだけ埋める
+  if(count > 0){
     while(count < 5){
       out.push("50");
       count++;
     }
-
-    out.push("50");
-    count = 0;
-    continue;
   }
+
+  // 改行
+  out.push("50");
+  count = 0;
+  continue;
+}
 
   let found = false;
 
