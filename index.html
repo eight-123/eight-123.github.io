@@ -191,15 +191,16 @@ rev[v]=k;
 
 // HEX→文字
 function hexToText(){
-let c=hexText.value.replace(/[^0-9A-F]/gi,"");
+let arr = hexText.value.trim().split(/\s+/);
+
 let r="";
-for(let i=0;i<c.length;i+=2){
-let h=c.substr(i,2).toUpperCase();
-r+=table[h]||"?";
-}
-textOut.textContent=r;
+for(let h of arr){
+  h = h.toUpperCase();
+  r += table[h] || "?";
 }
 
+textOut.textContent = r;
+}
 // 文字→HEX
 function textToHex(){
 let t=text.value;
