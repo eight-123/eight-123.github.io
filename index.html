@@ -102,6 +102,12 @@ font-weight:bold;
 <h2>GB文字変換</h2>
 
 <textarea id="hexText"></textarea><br>
+<!-- HEX→文字の設定 -->
+<select id="undefMode">
+  <option value="keep">未定義をそのまま表示</option>
+  <option value="remove">未定義を削除</option>
+</select>
+  
 <button onclick="hexToText()">HEX→文字</button>
 
 <br><br>
@@ -191,12 +197,25 @@ rev[v]=k;
 
 // HEX→文字
 function hexToText(){
-let arr = hexText.value.trim().split(/\s+/);
+  let arr = hexText.value.trim().split(/\s+/);
+  let mode = undefMode.value;
 
-let r="";
-for(let h of arr){
-  h = h.toUpperCase();
-  r += table[h] || h;
+  let r = "";
+
+  for(let h of arr){
+    h = h.toUpperCase();
+
+    if(table[h]){
+      r += table[h];
+    } else {
+      if(mode === "keep"){
+        r += h;   // 未定義をそのまま残す
+      }
+      // removeなら何も追加しない（スキップ）
+    }
+  }
+
+  textOut.textContent = r;
 }
 
 textOut.textContent = r;
