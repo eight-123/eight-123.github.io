@@ -1,4 +1,4 @@
-window. opcodes = {
+window. OPCODES = {
   0x00:{m:"NOP",s:1},
 
   0x3E:{m:"LD A,d8",s:2},
