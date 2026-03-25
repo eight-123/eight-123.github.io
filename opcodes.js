@@ -20,7 +20,7 @@ window. OPCODES = {
   0x20:{m:"JR NZ,r8",s:2},
   0x28:{m:"JR Z,r8",s:2},
 
-  0xE0:{m:"ld (FF a8),a",s:2},
+  0xE0:{m:"ld (FFa8),a",s:2},
   0xF0:{m:"ld A,(FFa8)",s:2},
 
   0xCB:{m:"PREFIX CB",s:1}
