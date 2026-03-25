@@ -1,6 +1,18 @@
 window. OPCODES = {
   0x00:{m:"NOP",s:1},
   0x02:{m:"ld (bc),a",s:1},
+  0x03:{m:"inc bc",s:1},
+  0x04:{m:"inc b",s:1},
+  0x05:{m:"dec b",s:1},
+  0x06:{m:"ld b,d8"s:2},
+  0x07:{m:"rlca"s:1},
+  0x08:{m:"ld (a16),sp",s:3},
+  0x09:{m:"add hl,bc",s:1},
+  0x0A:{m:"ld a,(bc)",s:1},
+  0x0B:{m:"dec bc",s:1},
+  0x0C:{m:"inc c",s:1},
+  0x0D:{m:"dec c",s:1},
+  0x0E:{m:"ld c,d8",s:2},
   
 
   0x3E:{m:"ld A,d8",s:2},
