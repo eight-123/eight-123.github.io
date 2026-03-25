@@ -71,7 +71,7 @@ window.OPCODES = {
   0x3C:{m:"inc a",s:1},
   0x3D:{m:"dec a",s:1},
   0x3E:{m:"ld a,d8",s:2},
-  0x3F:{m:"ccf",s:1}
+  0x3F:{m:"ccf",s:1},
   
   // =========================
   // 0x40 - 0x4F (ld b,?)
