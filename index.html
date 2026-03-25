@@ -180,7 +180,7 @@ logicOut.textContent=(parseInt(l1.value,16)^parseInt(l2.value,16)).toString(16);
 }
 
 // 文字テーブル（そのまま）
-const table = GB_TEXT;
+const table = window.GB_TEXT;
 // reverse
 const rev={};
 for(let k in table){
@@ -213,9 +213,8 @@ hexOut.textContent=out.join(" ");
 // ===== 逆アセンブル用 =====
 
 // 命令テーブル
-const OPCODES = opcodes;
-// CB命令
-const OPCODES_CB = opcodes_cb;
+const OPC = window.OPCODES;
+const CB  = window.OPCODES_CB;
 
 // hex表示
 function hex(v,d){
@@ -258,7 +257,7 @@ while(i<bytes.length){
     continue;
   }
 
-  let def=OPCODES[op];
+  let def = OPC[op];
   let size=def?def.s:1;
   i+=size;
   pc+=size;
@@ -283,16 +282,17 @@ while(i<bytes.length){
   }
 
   let op=bytes[i];
-
+  let def = OPC[op];
   if(op===0xCB){
     let cb=bytes[i+1];
-    let name=OPCODES_CB[cb]||"???";
+    let name = CB[cb]||"???";
     out.push(`${hex(pc,4)}: CB ${hex(cb,2)}  ${name}`);
     i+=2; pc+=2;
     continue;
   }
 
-  let def=OPCODES[op];
+  
+ 
 
   if(!def){
     out.push(`${hex(pc,4)}: ${hex(op,2)}  ???`);
